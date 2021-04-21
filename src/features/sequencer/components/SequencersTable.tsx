@@ -1,13 +1,14 @@
 import { EditOutlined } from '@ant-design/icons'
 import { ObsMode, Prefix, Subsystem } from '@tmtsoftware/esw-ts'
-import { Drawer, Space, Table, Typography } from 'antd'
+import { Space, Table, Typography } from 'antd'
 import type { ColumnsType } from 'antd/lib/table/interface'
 import type { BaseType } from 'antd/lib/typography/Base'
-import React, { useState } from 'react'
+import React from 'react'
+import { useHistory } from 'react-router-dom'
 import { HeaderTitle } from '../../../components/table/HeaderTitle'
+import { sequencerPath } from '../../../routes/RoutesConfig'
 import styles from '../../agent/components/agentCards.module.css'
 import { SequencerInfo, useSequencersData } from '../hooks/useSequencersData'
-import { SequencerDetails } from './sequencerDetails/SequencerDetails'
 
 const getPrefixColumn = (
   record: SequencerInfo,
@@ -65,24 +66,12 @@ type ObsModeSeqTableProps = {
   sequencers: Subsystem[]
 }
 
-const SequencerDrawer = ({
-  onClose,
-  selectedSequencerPrefix,
-  obsMode
-}: {
-  selectedSequencerPrefix: Prefix
-  obsMode: ObsMode
-  onClose: () => void
-}) => (
-  <Drawer visible width={'80%'} onClose={() => onClose()} destroyOnClose>
-    <SequencerDetails prefix={selectedSequencerPrefix} obsMode={obsMode.name} />
-  </Drawer>
-)
-
 export const SequencersTable = ({
   obsMode,
   sequencers
 }: ObsModeSeqTableProps): JSX.Element => {
+  const history = useHistory()
+
   const sortedSequencers: Prefix[] = sequencers.reduce(
     (acc: Prefix[], elem) => {
       const sequencer = new Prefix(elem, obsMode.name)
@@ -93,30 +82,14 @@ export const SequencersTable = ({
   )
 
   const sequencerStatus = useSequencersData(sortedSequencers)
-  const [isSeqDrawerVisible, setSeqDrawerVisibility] = useState(false)
-  const [selectedSequencer, selectSequencer] = useState<Prefix>()
-  const [
-    selectedSequencerStatus,
-    selectSequencerStatus
-  ] = useState<SequencerInfo>()
 
   const onEditHandle = (sequencerPrefix: string) => {
-    selectSequencer(Prefix.fromString(sequencerPrefix))
-    setSeqDrawerVisibility(true)
-    selectSequencerStatus(
-      sequencerStatus.data?.find((x) => sequencerPrefix === x.prefix)
-    )
+    const prefix = Prefix.fromString(sequencerPrefix)
+    history.push(sequencerPath(prefix, obsMode.name))
   }
 
   return (
     <>
-      {isSeqDrawerVisible && selectedSequencer && selectedSequencerStatus && (
-        <SequencerDrawer
-          obsMode={obsMode}
-          selectedSequencerPrefix={selectedSequencer}
-          onClose={() => setSeqDrawerVisibility(false)}
-        />
-      )}
       <Table
         rowKey={(record) => record.prefix}
         style={{ paddingBottom: '1.5rem' }}
