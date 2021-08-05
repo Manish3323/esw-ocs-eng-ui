@@ -1,27 +1,17 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {
-  GoOfflineResponse,
-  Prefix,
-  SequencerStateResponse
-} from '@tmtsoftware/esw-ts'
+import { GoOfflineResponse, Prefix } from '@tmtsoftware/esw-ts'
 import { expect } from 'chai'
 import React from 'react'
 import { verify, when } from 'ts-mockito'
 import { GoOffline } from '../../../../../src/features/sequencer/components/actions/GoOffline'
-import {
-  renderWithAuth,
-  sequencerServiceMock
-} from '../../../../utils/test-utils'
+import { goOfflineConstants } from '../../../../../src/features/sequencer/sequencerConstants'
+import { renderWithAuth, sequencerServiceMock } from '../../../../utils/test-utils'
 
 describe('GoOffline', () => {
   const testData: [GoOfflineResponse, string, string][] = [
-    [{ _type: 'Ok' }, 'Sequencer is offline successfully', 'successful'],
-    [
-      { _type: 'GoOfflineHookFailed' },
-      'Sequencer failed to go Offline, reason: GoOfflineHookFailed',
-      'failed'
-    ],
+    [{ _type: 'Ok' }, goOfflineConstants.successMessage, 'successful'],
+    [{ _type: 'GoOfflineHookFailed' }, `${goOfflineConstants.failureMessage}, reason: GoOfflineHookFailed`, 'failed'],
     [
       {
         _type: 'Unhandled',
@@ -29,7 +19,7 @@ describe('GoOffline', () => {
         messageType: 'GoOffline',
         state: 'InProgress'
       },
-      'Sequencer failed to go Offline, reason: GoOffline message is not handled in InProgress state',
+      `${goOfflineConstants.failureMessage}, reason: GoOffline message is not handled in InProgress state`,
       'failed'
     ]
   ]
@@ -39,16 +29,11 @@ describe('GoOffline', () => {
       when(sequencerServiceMock.goOffline()).thenResolve(res)
 
       renderWithAuth({
-        ui: (
-          <GoOffline
-            prefix={new Prefix('ESW', 'darknight')}
-            sequencerState={'Loaded'}
-          />
-        )
+        ui: <GoOffline prefix={new Prefix('ESW', 'darknight')} sequencerState={'Loaded'} />
       })
 
       const offlineButton = await screen.findByRole('button', {
-        name: 'Go offline'
+        name: goOfflineConstants.buttonText
       })
 
       userEvent.click(offlineButton, { button: 0 })
@@ -63,48 +48,29 @@ describe('GoOffline', () => {
     when(sequencerServiceMock.goOffline()).thenReject(Error('error occurred'))
 
     renderWithAuth({
-      ui: (
-        <GoOffline
-          prefix={new Prefix('ESW', 'darknight')}
-          sequencerState={'Idle'}
-        />
-      )
+      ui: <GoOffline prefix={new Prefix('ESW', 'darknight')} sequencerState={'Idle'} />
     })
 
     const offlineButton = await screen.findByRole('button', {
-      name: 'Go offline'
+      name: goOfflineConstants.buttonText
     })
 
     userEvent.click(offlineButton, { button: 0 })
 
-    await screen.findByText(
-      'Sequencer failed to go Offline, reason: error occurred'
-    )
+    await screen.findByText(`${goOfflineConstants.failureMessage}, reason: error occurred`)
 
     verify(sequencerServiceMock.goOffline()).called()
   })
 
-  const disabledStates: (SequencerStateResponse['_type'] | undefined)[] = [
-    undefined,
-    'Running'
-  ]
-
-  disabledStates.forEach((state) => {
-    it(`should be disabled if sequencer in ${state} | ESW-493`, async () => {
-      renderWithAuth({
-        ui: (
-          <GoOffline
-            prefix={new Prefix('ESW', 'darknight')}
-            sequencerState={state}
-          />
-        )
-      })
-
-      const offlineButton = (await screen.findByRole('button', {
-        name: 'Go offline'
-      })) as HTMLButtonElement
-
-      expect(offlineButton.disabled).true
+  it(`should be disabled if sequencer is running | ESW-493`, async () => {
+    renderWithAuth({
+      ui: <GoOffline prefix={new Prefix('ESW', 'darknight')} sequencerState={'Running'} />
     })
+
+    const offlineButton = (await screen.findByRole('button', {
+      name: goOfflineConstants.buttonText
+    })) as HTMLButtonElement
+
+    expect(offlineButton.disabled).true
   })
 })

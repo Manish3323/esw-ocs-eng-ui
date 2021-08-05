@@ -10,13 +10,7 @@ import { SmActions } from './SMActions'
 const { Meta } = Card
 
 const SMHeader = (): JSX.Element => {
-  return (
-    <Card
-      title={<SmStatusCard />}
-      bodyStyle={{ display: 'none' }}
-      extra={<SmActions />}
-    />
-  )
+  return <Card title={<SmStatusCard />} bodyStyle={{ display: 'none' }} extra={<SmActions />} />
 }
 
 const SMStatus = (): JSX.Element => {
@@ -35,15 +29,13 @@ const SMStatus = (): JSX.Element => {
 const SmStatusCard = (): JSX.Element => {
   return (
     <Space direction='vertical' size={3}>
-      <Typography.Text className={styles.pageTitle}>
-        Sequence Manager
-      </Typography.Text>
+      <Typography.Text className={styles.pageTitle}>Sequence Manager</Typography.Text>
       <Meta
         description={
-          <>
-            <Typography.Text type='secondary'>{' Status: '}</Typography.Text>
+          <Space>
+            <Typography.Text type='secondary'>{' Status:'}</Typography.Text>
             <SMStatus />
-          </>
+          </Space>
         }
       />
     </Space>

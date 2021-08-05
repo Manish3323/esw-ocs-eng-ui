@@ -2,9 +2,9 @@ import { DownOutlined, LogoutOutlined } from '@ant-design/icons'
 import { Button, Dropdown, Menu } from 'antd'
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import TMTLogo from '../../assets/images/TMT_Logo.png'
 import { useAuth } from '../../hooks/useAuth'
 import { HOME } from '../../routes/RoutesConfig'
+import { getUsername } from '../../utils/getUsername'
 import styles from './headerBar.module.css'
 
 export const HeaderBar = (): JSX.Element => {
@@ -12,7 +12,7 @@ export const HeaderBar = (): JSX.Element => {
   const [username, setUsername] = useState<string | undefined>(undefined)
 
   useEffect(() => {
-    setUsername(auth?.tokenParsed()?.preferred_username)
+    setUsername(getUsername(auth))
   }, [auth])
 
   const menu = (
@@ -39,7 +39,7 @@ export const HeaderBar = (): JSX.Element => {
   return (
     <>
       <Link to={HOME}>
-        <img role='tmt_logo' src={TMTLogo} className={styles.logo} />
+        <img role='tmt_logo' src={'TMT_Logo.png'} className={styles.logo} />
       </Link>
       <Logout />
     </>

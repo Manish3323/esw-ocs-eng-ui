@@ -8,18 +8,13 @@ import { useMutation } from '../../../hooks/useMutation'
 import { errorMessage, successMessage } from '../../../utils/message'
 import { useAgentsList } from '../../agent/hooks/useAgentsList'
 import { OBS_MODE_CONFIG } from '../constants'
+import { spawnSMConstants } from '../smConstants'
 
 const spawnSM = (agentPrefix: string) => (agent: AgentService) =>
-  agent
-    .spawnSequenceManager(
-      Prefix.fromString(agentPrefix),
-      OBS_MODE_CONFIG,
-      false
-    )
-    .then((res) => {
-      if (res._type === 'Failed') throw new Error(res.msg)
-      return res
-    })
+  agent.spawnSequenceManager(Prefix.fromString(agentPrefix), OBS_MODE_CONFIG, false).then((res) => {
+    if (res._type === 'Failed') throw new Error(res.msg)
+    return res
+  })
 
 export const SpawnSMButton = (): JSX.Element => {
   const [modalVisibility, setModalVisibility] = useState(false)
@@ -30,12 +25,8 @@ export const SpawnSMButton = (): JSX.Element => {
 
   const spawnSmAction = useMutation({
     mutationFn: spawnSM(agentPrefix),
-    onSuccess: () => successMessage('Successfully spawned Sequence Manager'),
-    onError: (e) =>
-      errorMessage(
-        'Sequence Manager could not be spawned. Please try again.',
-        e
-      ),
+    onSuccess: () => successMessage(spawnSMConstants.successMessage),
+    onError: (e) => errorMessage(spawnSMConstants.failureMessage, e),
     useErrorBoundary: true // TODO : Remove error boundary
   })
 
@@ -44,16 +35,16 @@ export const SpawnSMButton = (): JSX.Element => {
       agentService && spawnSmAction.mutateAsync(agentService)
       setModalVisibility(false)
     } else {
-      errorMessage(`Please select agent!`)
+      errorMessage(spawnSMConstants.selectAgentMessage)
     }
   }
 
-  const handleSpawnButtonClick = () => {
+  const handleSpawnButtonClick = async () => {
     // do we need special treatment when agent list is empty ?
     if (allAgentsQuery.data && allAgentsQuery.data.length !== 0) {
       setModalVisibility(true)
     } else {
-      errorMessage('Agents are not running. Please start an agent first.')
+      errorMessage(spawnSMConstants.agentNotRunningMessage)
     }
   }
   const handleModalCancel = () => setModalVisibility(false)
@@ -63,16 +54,12 @@ export const SpawnSMButton = (): JSX.Element => {
 
   return (
     <>
-      <Button
-        type='primary'
-        size='middle'
-        loading={spawnSmAction.isLoading}
-        onClick={handleSpawnButtonClick}>
-        Spawn
+      <Button type='primary' size='middle' loading={spawnSmAction.isLoading} onClick={handleSpawnButtonClick}>
+        {spawnSMConstants.buttonText}
       </Button>
       <SelectionModal
-        title='Choose an agent to spawn the Sequence Manager'
-        okText='Spawn'
+        title={spawnSMConstants.modalTitle}
+        okText={spawnSMConstants.modalOkText}
         visible={modalVisibility}
         confirmLoading={spawnSmAction.isLoading}
         onOk={handleModalOk}

@@ -14,12 +14,9 @@ describe('Resources page', () => {
     renderWithAuth({ ui: <Resources /> })
 
     const [tableHead] = await screen.findAllByRole('table')
-    expect(within(tableHead).getByRole('columnheader', { name: 'Resource' })).to
-      .exist
-    expect(within(tableHead).getByRole('columnheader', { name: 'Status' })).to
-      .exist
-    expect(within(tableHead).getByRole('columnheader', { name: 'Used By' })).to
-      .exist
+    expect(within(tableHead).getByRole('columnheader', { name: 'Resource' })).to.exist
+    expect(within(tableHead).getByRole('columnheader', { name: 'Status' })).to.exist
+    expect(within(tableHead).getByRole('columnheader', { name: 'Used By' })).to.exist
   })
 
   it('should display resources in use for configured obsmode & for conflicting non-configurable resources | ESW-453', async () => {
@@ -30,12 +27,9 @@ describe('Resources page', () => {
     expect(screen.getAllByText('Resource')).to.length(1)
     //Find resources table
     const [, tableBody] = await screen.findAllByRole('table')
-    const inUseResourcesRows: HTMLElement[] = within(tableBody).getAllByRole(
-      'row',
-      {
-        name: /InUse/i
-      }
-    )
+    const inUseResourcesRows: HTMLElement[] = within(tableBody).getAllByRole('row', {
+      name: /InUse/i
+    })
 
     inUseResourcesRows.forEach((row) => {
       within(row).getByRole('cell', { name: /(NFARIOS|TCS)/ })
@@ -53,9 +47,7 @@ describe('Resources page', () => {
     expect(screen.getAllByText('Resource')).to.length(1)
     //Find resources table
     const [, tableBody] = await screen.findAllByRole('table')
-    const availableResourcesRows: HTMLElement[] = within(
-      tableBody
-    ).getAllByRole('row', {
+    const availableResourcesRows: HTMLElement[] = within(tableBody).getAllByRole('row', {
       name: /Available/i
     })
 

@@ -1,0 +1,98 @@
+name: dev
+
+on:
+  push:
+    tags: 
+      - "v*"
+
+jobs:
+  test:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: increase file watchers
+        run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+
+      - uses: actions/setup-node@v1
+        with:
+          node-version: "15.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Cache ~/.npm
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install
+        run: npm ci
+
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: npm run test:ci
+
+      - name: Generate RTM
+        if: always()
+        continue-on-error: true
+        run: |
+          sh rtm.sh
+
+      - name: Upload RTM
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v2
+        with:
+          name: RTM
+          path: ./RTM
+
+      - name: Upload Coverage
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v2
+        with:
+          name: Coverage
+          path: ./coverage
+
+      - name: Create rtm zip
+        uses: thedoctor0/zip-release@master
+        with:
+          filename: 'RTM.zip'
+          path: ./RTM
+
+      - name: Create coverage zip
+        uses: thedoctor0/zip-release@master
+        with:
+          filename: 'coverage.zip'
+          path: ./coverage
+
+      - name: Create build zip
+        uses: thedoctor0/zip-release@master
+        with:
+          filename: 'esw-ocs-eng-ui.zip'
+          path: ./esw-ocs-eng-ui
+
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            ./RTM.zip
+            ./coverage.zip
+            ./esw-ocs-eng-ui.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify slack
+        if: always()
+        continue-on-error: true
+        uses: kpritam/slack-job-status-action@v1
+        with:
+          job-status: ${{ job.status }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel: ci-dev

@@ -14,6 +14,7 @@ import { expect } from 'chai'
 import React from 'react'
 import { mock, verify, when } from 'ts-mockito'
 import { SmActions } from '../../../src/containers/infrastructure/SMActions'
+import { configureConstants, provisionConstants, startSequencerConstants } from '../../../src/features/sm/smConstants'
 import { mockServices, renderWithAuth } from '../../utils/test-utils'
 
 describe('SM actions', () => {
@@ -64,41 +65,65 @@ describe('SM actions', () => {
     [agentStatusSuccess2, 'without any agent']
   ]
   unProvisionRenderTestData.map(([agentStatusResponse, name]) => {
-    it(`should render provision button as enabled & configure button as disabled if no seq comps are running ${name} | ESW-442, ESW-445`, async () => {
+    it(`should render provision button as enabled & configure, start sequencer button as disabled if no seq comps are running ${name} | ESW-442, ESW-445, ESW-447`, async () => {
       when(agentService.getAgentStatus()).thenResolve(agentStatusResponse)
 
       renderWithAuth({
         ui: <SmActions />
       })
 
-      const configureButton = screen.getByRole('button', {
-        name: 'Configure'
-      }) as HTMLButtonElement
-
       const provisionButton = screen.getByRole('button', {
-        name: 'Provision'
+        name: provisionConstants.buttonText
       }) as HTMLButtonElement
 
-      expect(configureButton.disabled).true
+      const configureButton = screen.getByRole('button', {
+        name: configureConstants.buttonText
+      }) as HTMLButtonElement
+
+      const startSequencerButton = screen.getByRole('button', {
+        name: startSequencerConstants.buttonText
+      }) as HTMLButtonElement
+
       expect(provisionButton.disabled).false
+      expect(configureButton.disabled).true
+      expect(startSequencerButton.disabled).true
 
       // wait for both buttons to be enabled once data is loaded in async manner
       await waitFor(() => {
         expect(
-          (screen.getByRole('button', {
-            name: 'Provision'
-          }) as HTMLButtonElement).disabled
+          (
+            screen.getByRole('button', {
+              name: provisionConstants.buttonText
+            }) as HTMLButtonElement
+          ).disabled
         ).false
       })
       await waitFor(() => {
         expect(
-          (screen.getByRole('button', {
-            name: 'Configure'
-          }) as HTMLButtonElement).disabled
+          (
+            screen.getByRole('button', {
+              name: configureConstants.buttonText
+            }) as HTMLButtonElement
+          ).disabled
         ).false
       })
 
       verify(agentService.getAgentStatus()).called()
+    })
+  })
+
+  it('should render start sequencer button as enabled if sequence component is present on agent', async () => {
+    when(agentService.getAgentStatus()).thenResolve(agentStatusSuccess1)
+
+    renderWithAuth({
+      ui: <SmActions />
+    })
+
+    await waitFor(() => {
+      const button = screen.getByRole('button', {
+        name: startSequencerConstants.buttonText
+      }) as HTMLButtonElement
+      expect(button.disabled).false
     })
   })
 })

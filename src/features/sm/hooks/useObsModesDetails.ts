@@ -1,7 +1,4 @@
-import type {
-  ObsModeDetails,
-  SequenceManagerService
-} from '@tmtsoftware/esw-ts'
+import type { ObsModeDetails, SequenceManagerService } from '@tmtsoftware/esw-ts'
 import type { TabName } from '../../../containers/observation/ObservationTabs'
 import { useSMService } from '../../../contexts/SMContext'
 import { useQuery, UseQueryResult } from '../../../hooks/useQuery'
@@ -13,15 +10,12 @@ export type GroupedObsModeDetails = {
   [key in TabName]: ObsModeDetails[]
 }
 
-const getObsModesDetails = async (
-  smService: SequenceManagerService
-): Promise<GroupedObsModeDetails> => {
-  const response = await smService?.getObsModesDetails()
-  if (response?._type === 'Failed') return errorMessage(response.msg)
-  if (response?._type === 'LocationServiceError')
-    return errorMessage(response.reason)
+const getObsModesDetails = async (smService: SequenceManagerService): Promise<GroupedObsModeDetails> => {
+  const response = await smService.getObsModesDetails()
+  if (response._type === 'Failed') return errorMessage(response.msg)
+  if (response._type === 'LocationServiceError') return errorMessage(response.reason)
 
-  const grouped = groupBy(response?.obsModes, (x) => x.status._type)
+  const grouped = groupBy(response.obsModes, (x) => x.status._type)
   return {
     Running: grouped.get('Configured') || [],
     Configurable: grouped.get('Configurable') || [],
@@ -32,13 +26,9 @@ const getObsModesDetails = async (
 export const useObsModesDetails = (): UseQueryResult<GroupedObsModeDetails> => {
   const [smContext] = useSMService()
   const smService = smContext?.smService
-  return useQuery(
-    OBS_MODES_DETAILS.key,
-    () => smService && getObsModesDetails(smService),
-    {
-      // The query will not execute until the smService is resolved
-      enabled: !!smService,
-      refetchInterval: OBS_MODES_DETAILS.refetchInterval
-    }
-  )
+  return useQuery(OBS_MODES_DETAILS.key, () => smService && getObsModesDetails(smService), {
+    // The query will not execute until the smService is resolved
+    enabled: !!smService,
+    refetchInterval: OBS_MODES_DETAILS.refetchInterval
+  })
 }

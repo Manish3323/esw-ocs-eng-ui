@@ -9,62 +9,38 @@
   margin-bottom: 1.5rem;
 }
 
-.iconBoxSequencer {
-  background-color: white;
-  border-left: 1px solid #b7eb8f;
-}
-
-.iconBoxSeqComp {
-  border-left: 1px solid #d9d9d9;
-}
-
-.iconBox,
-.iconBoxSequencer,
-.iconBoxSeqComp {
+.iconBox {
   display: flex;
   align-items: center;
+  padding-left: 1rem;
 }
 
-.commonIcon,
-.disabledIcon {
+.addSeqCompIcon {
   font-size: 1.35rem;
 }
 
-.icon,
-.deleteIcon {
-  padding: 0.25rem 0.5rem;
-  font-size: 1.25rem;
-}
-
 .icon:hover,
-.commonIcon:hover {
+.addSeqCompIcon:hover {
   color: var(--activeColor);
 }
 
-.deleteIcon:hover {
-  color: var(--dangerColor);
-}
-
 .seqComp,
-.sequencerComp {
+.sequencer {
   border: 1px solid #d9d9d9;
   font-size: 14px;
-}
-
-.seqCompTitle,
-.sequencerTitle {
   padding: 0.5rem 0.75rem;
 }
 
-.sequencerComp {
+.sequencer {
   background-color: #f6ffed;
   border-color: #b7eb8f;
 }
 
-.disabledIcon {
-  color: var(--disabledColor);
+:global #spawnSequenceComponent .ant-popover-message-title {
+  padding-left: 0;
 }
 
-.sequencerTitle {
-  cursor: pointer;
+.disabledSequencerActions {
+  white-space: pre-wrap;
+  font-style: italic;
 }

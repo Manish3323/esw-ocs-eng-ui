@@ -41,19 +41,14 @@ function outputSuite(suite, indent = '') {
         return result
       })
       .join('\n') + '\n'
-  if (suite.suites)
-    results += suite.suites
-      .map((suite) => outputSuite(suite, indent + '  '))
-      .join('\n')
+  if (suite.suites) results += suite.suites.map((suite) => outputSuite(suite, indent + '  ')).join('\n')
   return results
 }
 
 function generateTestReport(sessionsForTestFile) {
   let results = ''
   sessionsForTestFile.forEach((session) => {
-    results += session.testResults?.suites
-      .map((suite) => outputSuite(suite, ''))
-      .join('\n\n')
+    results += session.testResults?.suites.map((suite) => outputSuite(suite, '')).join('\n\n')
   })
   return results
 }

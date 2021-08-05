@@ -9,28 +9,17 @@ interface SelectionModalProps extends ModalProps {
   onChange: (value: string) => void
 }
 
-const getList = (
-  selectedItem: string,
-  data: string[] | undefined,
-  onChange: (value: string) => void
-) => {
-  const onSelect = (e: SelectInfo) => onChange(e.key as string)
+const getList = (selectedItem: string, data: string[] | undefined, onChange: (value: string) => void) => {
+  const onSelect = (e: SelectInfo) => onChange(e.key)
   if (data === undefined || data.length === 0) {
     return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
   }
   return (
-    <Menu
-      selectable
-      onSelect={onSelect}
-      selectedKeys={[selectedItem]}
-      className={styles.menu}>
+    <Menu selectable onSelect={onSelect} selectedKeys={[selectedItem]} className={styles.menu}>
       {data.map((item) => {
         return (
           <Menu.Item
-            className={
-              styles.menuItem +
-              ` ${item === selectedItem ? styles.selectedItem : ''}`
-            }
+            className={styles.menuItem + ` ${item === selectedItem ? styles.selectedItem : ''}`}
             style={{ paddingLeft: '1.5rem', marginTop: 0, marginBottom: 0 }}
             key={item}>
             {item}
@@ -63,7 +52,7 @@ export const SelectionModal = ({
     confirmLoading={confirmLoading}
     bodyStyle={{ padding: 0 }}
     okButtonProps={{
-      disabled: !selectedItem || !data || data?.length === 0
+      disabled: !selectedItem || !data || data.length === 0
     }}
     onOk={onOk}
     onCancel={onCancel}>

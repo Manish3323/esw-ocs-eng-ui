@@ -1,22 +1,14 @@
-import type { ByRoleMatcher } from '@testing-library/dom/types/matches'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {
-  AgentProvisionConfig,
-  ConfigData,
-  Prefix,
-  ProvisionConfig
-} from '@tmtsoftware/esw-ts'
+import { AgentProvisionConfig, ConfigData, FailedResponse, Prefix, ProvisionConfig } from '@tmtsoftware/esw-ts'
 import type { ProvisionResponse } from '@tmtsoftware/esw-ts'
 import { expect } from 'chai'
 import React from 'react'
 import { anything, deepEqual, resetCalls, verify, when } from 'ts-mockito'
 import { ProvisionButton } from '../../../../../src/features/sm/components/provision/ProvisionButton'
 import { PROVISION_CONF_PATH } from '../../../../../src/features/sm/constants'
-import {
-  mockServices,
-  renderWithAuth
-} from '../../../../../test/utils/test-utils'
+import { provisionConfConstants, provisionConstants } from '../../../../../src/features/sm/smConstants'
+import { mockServices, renderWithAuth } from '../../../../../test/utils/test-utils'
 
 describe('ProvisionButton component', () => {
   const provisionRes: ProvisionResponse = {
@@ -48,13 +40,9 @@ describe('ProvisionButton component', () => {
     const smService = mockServices.mock.smService
     const configService = mockServices.mock.configService
 
-    when(configService.getActive(PROVISION_CONF_PATH)).thenResolve(
-      ConfigData.fromString(JSON.stringify(confData))
-    )
+    when(configService.getActive(PROVISION_CONF_PATH)).thenResolve(ConfigData.fromString(JSON.stringify(confData)))
 
-    when(smService.provision(deepEqual(provisionConfig))).thenResolve(
-      provisionRes
-    )
+    when(smService.provision(deepEqual(provisionConfig))).thenResolve(provisionRes)
 
     const { provisionButton } = await renderAndFindProvision()
 
@@ -62,19 +50,17 @@ describe('ProvisionButton component', () => {
     userEvent.click(provisionButton)
 
     //Provision config modal will appear with provision button
-    await assertDialog((container, name) =>
-      screen.getByRole(container, { name })
-    )
+    await assertDialog()
 
     verify(configService.getActive(PROVISION_CONF_PATH)).called()
 
     const document = screen.getByRole('document')
     const confirmButton = within(document).getByRole('button', {
-      name: 'Provision'
+      name: provisionConstants.modalOkText
     })
 
     userEvent.click(confirmButton)
-    await screen.findByText('Successfully provisioned')
+    await screen.findByText(provisionConstants.successMessage)
 
     verify(smService.provision(deepEqual(provisionConfig))).called()
   })
@@ -83,9 +69,7 @@ describe('ProvisionButton component', () => {
     const smService = mockServices.mock.smService
     const configService = mockServices.mock.configService
 
-    when(configService.getActive(PROVISION_CONF_PATH)).thenReject(
-      Error('error occurred')
-    )
+    when(configService.getActive(PROVISION_CONF_PATH)).thenReject(Error('error occurred'))
 
     const { provisionButton } = await renderAndFindProvision()
 
@@ -103,9 +87,7 @@ describe('ProvisionButton component', () => {
     )
 
     verify(configService.getActive(PROVISION_CONF_PATH)).called()
-    await screen.findByText(
-      'Failed to fetch provision config, reason: error occurred'
-    )
+    await screen.findByText(`${provisionConfConstants.fetchFailureMessage}, reason: error occurred`)
 
     verify(smService.provision(anything())).never()
   })
@@ -113,17 +95,17 @@ describe('ProvisionButton component', () => {
   const provisionConfTestData: [string, string, string][] = [
     [
       'esw.esw-machine',
-      "Failed to fetch provision config, reason: Requirement failed - component name esw-machine has '-'",
+      `${provisionConfConstants.fetchFailureMessage}, reason: Requirement failed - component name esw-machine has '-'`,
       'prefix(esw.esw-machine)'
     ],
     [
       'esw.esw_machine ',
-      'Failed to fetch provision config, reason: Requirement failed - component name esw_machine has leading/trailing whitespace',
+      `${provisionConfConstants.fetchFailureMessage}, reason: Requirement failed - component name esw_machine has leading/trailing whitespace`,
       'prefix(esw.esw_machine)'
     ],
     [
       'rms.esw_machine',
-      'Failed to fetch provision config, reason: Subsystem: rms is invalid',
+      `${provisionConfConstants.fetchFailureMessage}, reason: Subsystem: rms is invalid`,
       'subsystem(rms)'
     ]
   ]
@@ -141,9 +123,7 @@ describe('ProvisionButton component', () => {
           })
         )
       )
-      when(smService.provision(deepEqual(provisionConfig))).thenResolve(
-        provisionRes
-      )
+      when(smService.provision(deepEqual(provisionConfig))).thenResolve(provisionRes)
 
       const { provisionButton } = await renderAndFindProvision()
 
@@ -181,9 +161,7 @@ describe('ProvisionButton component', () => {
 
   const spawnSeqCompError: ProvisionResponse = {
     _type: 'SpawningSequenceComponentsFailed',
-    failureResponses: [
-      'failed to spawn: ESW.ESW_1 on ESW.machine, reason: invalid binary'
-    ]
+    failureResponses: ['failed to spawn: ESW.ESW_1 on ESW.machine, reason: invalid binary']
   }
 
   const couldNotFindMachine: ProvisionResponse = {
@@ -191,50 +169,48 @@ describe('ProvisionButton component', () => {
     prefix: [Prefix.fromString('esw.esw_machine')]
   }
 
-  const provisionErrorTestData: [
-    string,
-    Promise<ProvisionResponse>,
-    string
-  ][] = [
+  const failedResponse: FailedResponse = {
+    _type: 'FailedResponse',
+    reason: 'Provision message timed out'
+  }
+
+  const provisionErrorTestData: [string, Promise<ProvisionResponse>, string][] = [
     [
       'Unhandled',
       Promise.resolve(unhandled),
-      'Failed to provision, reason: Provision message type is not supported in Processing state'
+      `${provisionConstants.failureMessage}, reason: Provision message type is not supported in Processing state`
     ],
     [
       'LocationServiceError',
       Promise.resolve(locServiceError),
-      'Failed to provision, reason: ESW.sequence_manager is not found'
+      `${provisionConstants.failureMessage}, reason: ESW.sequence_manager is not found`
     ],
     [
       'SpawningSequenceComponentsFailed',
       Promise.resolve(spawnSeqCompError),
-      'Failed to provision, reason: Unable to spawn following sequence comps on machines: ESW.ESW_1 on ESW.machine,'
+      `${provisionConstants.failureMessage}, reason: failed to spawn: ESW.ESW_1 on ESW.machine,`
     ],
     [
       'CouldNotFindMachines',
       Promise.resolve(couldNotFindMachine),
-      'Failed to provision, reason: Could not find following machine: ESW.esw_machine'
+      `${provisionConstants.failureMessage}, reason: Could not find following machine: ESW.esw_machine`
     ],
     [
-      'Exception',
-      Promise.reject(Error('error occured')),
-      'Failed to provision, reason: error occured'
-    ]
+      'FailedResponse',
+      Promise.resolve(failedResponse),
+      `${provisionConstants.failureMessage}, reason: Provision message timed out`
+    ],
+    ['Exception', Promise.reject(Error('error occured')), `${provisionConstants.failureMessage}, reason: error occured`]
   ]
 
   provisionErrorTestData.forEach(([name, provisionRes, errMsg]) => {
-    it(`should be able to show error log if provision return ${name} | ESW-444`, async () => {
+    it(`should be able to show error log if provision return ${name} | ESW-444, ESW-507`, async () => {
       const smService = mockServices.mock.smService
       const configService = mockServices.mock.configService
 
-      when(configService.getActive(PROVISION_CONF_PATH)).thenResolve(
-        ConfigData.fromString(JSON.stringify(confData))
-      )
+      when(configService.getActive(PROVISION_CONF_PATH)).thenResolve(ConfigData.fromString(JSON.stringify(confData)))
 
-      when(smService.provision(deepEqual(provisionConfig))).thenReturn(
-        provisionRes
-      )
+      when(smService.provision(deepEqual(provisionConfig))).thenReturn(provisionRes)
 
       const { provisionButton } = await renderAndFindProvision()
 
@@ -242,15 +218,13 @@ describe('ProvisionButton component', () => {
       userEvent.click(provisionButton)
 
       //Provision config modal will appear with provision button
-      await assertDialog((container, name) =>
-        screen.getByRole(container, { name })
-      )
+      await assertDialog()
 
       verify(configService.getActive(PROVISION_CONF_PATH)).called()
 
       const document = screen.getByRole('document')
       const confirmButton = within(document).getByRole('button', {
-        name: 'Provision'
+        name: provisionConstants.modalOkText
       })
 
       userEvent.click(confirmButton)
@@ -266,23 +240,21 @@ describe('ProvisionButton component', () => {
     })
 
     const provisionButton = await screen.findByRole('button', {
-      name: 'Provision'
+      name: provisionConstants.buttonText
     })
 
     return { provisionButton }
   }
 
-  const assertDialog = async (
-    getByRole: (con: ByRoleMatcher, name: string | RegExp) => HTMLElement
-  ) => {
-    await waitFor(
-      () => expect(getByRole('dialog', 'Provision Configuration:')).to.exist
-    )
+  const assertDialog = async () => {
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'Provision Configuration:' })).to.exist)
 
-    const dialog = getByRole('dialog', 'Provision Configuration:')
+    const dialog = screen.getByRole('dialog', {
+      name: 'Provision Configuration:'
+    })
 
     await within(dialog).findByRole('table')
-    await within(dialog).findByRole('button', { name: 'Provision' })
+    await within(dialog).findByRole('button', { name: provisionConstants.modalOkText })
     await within(dialog).findByRole('button', { name: 'Cancel' })
   }
 })

@@ -1,30 +1,20 @@
-import { LoadingOutlined } from '@ant-design/icons'
-import { AuthContextProvider } from '@tmtsoftware/esw-ts'
-import { Result } from 'antd'
+import { AuthContextProvider, setAppName } from '@tmtsoftware/esw-ts'
 import React from 'react'
 import { render } from 'react-dom'
+import { QueryClient, QueryClientProvider } from 'react-query'
 import { AppConfig } from './config/AppConfig'
 import { App } from './containers/app/App'
-import { CombinedServiceContext } from './contexts/CombinedServiceContext'
-import { useAuth } from './hooks/useAuth'
 import './index.module.css'
 
-const Main = () => {
-  const { auth } = useAuth()
-
-  if (auth === null) return <Result icon={<LoadingOutlined />} />
-
-  return (
-    <CombinedServiceContext>
-      <App />
-    </CombinedServiceContext>
-  )
-}
+setAppName(AppConfig.applicationName)
+const queryClient = new QueryClient()
 
 render(
   <React.StrictMode>
-    <AuthContextProvider config={AppConfig}>
-      <Main />
+    <AuthContextProvider>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
     </AuthContextProvider>
   </React.StrictMode>,
   document.getElementById('root')

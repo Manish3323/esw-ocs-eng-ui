@@ -1,14 +1,15 @@
 import { cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { ShutdownSequenceComponentResponse } from '@tmtsoftware/esw-ts'
+import type { FailedResponse, ShutdownSequenceComponentResponse } from '@tmtsoftware/esw-ts'
 import { expect } from 'chai'
 import React from 'react'
 import { verify, when } from 'ts-mockito'
 import { UnProvisionButton } from '../../../../../src/features/sm/components/provision/UnProvisionButton'
+import { unProvisionConstants } from '../../../../../src/features/sm/smConstants'
 import { mockServices, renderWithAuth } from '../../../../utils/test-utils'
 
 describe('UnProvision button', () => {
-  const modalTitle = 'Do you want to shutdown all the Sequence Components?'
+  const modalTitle = unProvisionConstants.modalTitle
 
   afterEach(() => {
     cleanup()
@@ -18,8 +19,7 @@ describe('UnProvision button', () => {
     _type: 'Unhandled',
     state: 'Processing',
     messageType: 'ShutdownAllSequenceComponents',
-    msg:
-      'ShutdownAllSequenceComponents message type is not supported in Processing state'
+    msg: 'ShutdownAllSequenceComponents message type is not supported in Processing state'
   }
 
   const locServiceError: ShutdownSequenceComponentResponse = {
@@ -27,38 +27,39 @@ describe('UnProvision button', () => {
     reason: 'ESW.sequence_manager is not found'
   }
 
+  const failedResponse: FailedResponse = {
+    _type: 'FailedResponse',
+    reason: 'UnProvision message timed out'
+  }
+
   const shutdownRes: ShutdownSequenceComponentResponse = {
     _type: 'Success'
   }
 
-  const unProvisionTestData: [
-    string,
-    string,
-    Promise<ShutdownSequenceComponentResponse>,
-    string
-  ][] = [
+  const unProvisionTestData: [string, string, Promise<ShutdownSequenceComponentResponse>, string][] = [
     [
       'error',
       'Unhandled',
       Promise.resolve(unhandled),
-      'Failed to shutdown all Sequence Components, reason: ShutdownAllSequenceComponents message type is not supported in Processing state'
+      `${unProvisionConstants.failureMessage}, reason: ShutdownAllSequenceComponents message type is not supported in Processing state`
     ],
     [
       'error',
       'LocationServiceError',
       Promise.resolve(locServiceError),
-      'Failed to shutdown all Sequence Components, reason: ESW.sequence_manager is not found'
+      `${unProvisionConstants.failureMessage}, reason: ESW.sequence_manager is not found`
     ],
+    ['success', 'Success', Promise.resolve(shutdownRes), unProvisionConstants.successMessage],
     [
-      'success',
-      'Success',
-      Promise.resolve(shutdownRes),
-      'Successfully shutdown all the Sequence Components'
+      'error',
+      'FailedResponse',
+      Promise.resolve(failedResponse),
+      `${unProvisionConstants.failureMessage}, reason: UnProvision message timed out`
     ]
   ]
 
   unProvisionTestData.forEach(([type, name, shutdownRes, errMsg]) => {
-    it(`should be able to show ${type} log if shutdownAllSequenceComponents return ${name} | ESW-444`, async () => {
+    it(`should be able to show ${type} log if shutdownAllSequenceComponents return ${name} | ESW-444, ESW-507`, async () => {
       const smService = mockServices.mock.smService
 
       when(smService.shutdownAllSequenceComponents()).thenReturn(shutdownRes)
@@ -74,7 +75,7 @@ describe('UnProvision button', () => {
       const modalDocument = screen.getByRole('dialog')
 
       const modalShutdownButton = within(modalDocument).getByRole('button', {
-        name: 'Shutdown'
+        name: unProvisionConstants.modalOkText
       })
 
       //User clicks modal's shutdown button
@@ -96,7 +97,7 @@ describe('UnProvision button', () => {
     })
 
     const unProvisionButton = await screen.findByRole('button', {
-      name: 'Unprovision'
+      name: unProvisionConstants.buttonText
     })
 
     return { unProvisionButton }

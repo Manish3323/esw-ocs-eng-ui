@@ -6,6 +6,7 @@ import { useSMService } from '../../../contexts/SMContext'
 import { errorMessage } from '../../../utils/message'
 import { useConfigureAction } from '../hooks/useConfigureAction'
 import { useObsModesDetails } from '../hooks/useObsModesDetails'
+import { configureConstants } from '../smConstants'
 
 type ConfigureProps = {
   disabled: boolean | undefined
@@ -28,7 +29,7 @@ export const Configure = ({ disabled }: ConfigureProps): JSX.Element => {
       }
       setModalVisibility(false)
     } else {
-      errorMessage(`Please select observation mode!`)
+      errorMessage(configureConstants.selectObModeMessage)
     }
   }
 
@@ -51,17 +52,15 @@ export const Configure = ({ disabled }: ConfigureProps): JSX.Element => {
         disabled={disabled || loading || !smService}
         loading={configureAction.isLoading}
         onClick={onConfigureClick}>
-        Configure
+        {configureConstants.buttonText}
       </Button>
       <SelectionModal
-        title='Select an Observation Mode to configure:'
-        okText='Configure'
+        title={configureConstants.modalTitle}
+        okText={configureConstants.modalOkText}
         visible={modalVisibility}
         onOk={handleModalOk}
         onCancel={handleCancel}
-        data={obsModesDetails.map(
-          (obsModeDetail) => obsModeDetail.obsMode.name
-        )}
+        data={obsModesDetails.map((obsModeDetail) => obsModeDetail.obsMode.name)}
         selectedItem={obsMode?.name ?? ''}
         onChange={(value: string) => setObsMode(new ObsMode(value))}
       />

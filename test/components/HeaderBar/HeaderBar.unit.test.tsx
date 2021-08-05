@@ -1,4 +1,4 @@
-import { cleanup, screen } from '@testing-library/react'
+import { cleanup, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect } from 'chai'
 import React from 'react'
@@ -48,8 +48,8 @@ describe('header bar', () => {
     const logoutButton = await screen.findByText('ESW-USER')
     userEvent.click(logoutButton, leftClick)
     // wait for dropdown to appear
-    const logoutMenuItem = await screen.findByText('Logout')
-    userEvent.click(logoutMenuItem, leftClick)
+    const logoutMenuItem = await screen.findByRole('menuitem')
+    await waitFor(() => userEvent.click(logoutMenuItem))
 
     //verify that the logout function passed by auth context is called on click of logout button of modal
     verify(mockAuthFunctions.logout()).called()

@@ -8,15 +8,13 @@ import { useProvisionStatus } from '../../features/sm/hooks/useProvisionStatus'
 import type { TabName } from './ObservationTabs'
 
 type ObsModeActionsProps = {
-  tabName: TabName
+  tabName?: TabName
   obsMode: ObsMode
 }
 
-const RunningActions = ({ obsMode }: ObsModeActionsProps) => (
-  <ShutdownButton obsMode={obsMode} />
-)
+export const RunningActions = ({ obsMode }: ObsModeActionsProps): JSX.Element => <ShutdownButton obsMode={obsMode} />
 
-const NonRunningActions = ({ tabName, obsMode }: ObsModeActionsProps) => {
+export const ConfigurableActions = ({ obsMode }: ObsModeActionsProps): JSX.Element => {
   const configureAction = useConfigureAction(obsMode)
   const [smContext, isLoading] = useSMService()
   const smService = smContext?.smService
@@ -26,19 +24,8 @@ const NonRunningActions = ({ tabName, obsMode }: ObsModeActionsProps) => {
     <Button
       onClick={() => smService && configureAction.mutate(smService)}
       loading={isLoading || configureAction.isLoading}
-      disabled={tabName === 'Non-configurable' || !provisionStatus}>
+      disabled={!provisionStatus}>
       Configure
     </Button>
   )
 }
-
-// TODO memoise these components  to avoid unnecessary renders
-export const ObsModeActions = ({
-  tabName,
-  obsMode
-}: ObsModeActionsProps): JSX.Element =>
-  tabName === 'Running' ? (
-    <RunningActions tabName={tabName} obsMode={obsMode} />
-  ) : (
-    <NonRunningActions tabName={tabName} obsMode={obsMode} />
-  )

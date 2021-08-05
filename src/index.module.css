@@ -30,3 +30,9 @@ body {
 :global .ant-table-tbody > tr.ant-table-row-selected:hover > td {
   background: #fafafa;
 }
+
+.centeredFlexElement {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

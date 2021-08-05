@@ -1,24 +1,18 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {
-  GenericResponse,
-  Prefix,
-  RemoveBreakpointResponse,
-  Setup,
-  Step
-} from '@tmtsoftware/esw-ts'
+import { GenericResponse, Prefix, RemoveBreakpointResponse, Setup, Step } from '@tmtsoftware/esw-ts'
 import React from 'react'
 import { reset, verify, when } from 'ts-mockito'
-import { BreakpointAction } from '../../../../../src/features/sequencer/components/sequencerDetails/BreakpointActions'
+import { BreakpointAction } from '../../../../../src/features/sequencer/components/steplist/BreakpointActions'
 import {
-  renderWithAuth,
-  sequencerServiceMock
-} from '../../../../utils/test-utils'
+  insertBreakPointConstants,
+  removeBreakPointConstants,
+  stepConstants
+} from '../../../../../src/features/sequencer/sequencerConstants'
+import { MenuWithStepListContext, renderWithAuth, sequencerServiceMock } from '../../../../utils/test-utils'
 
 describe('Breakpoint actions', () => {
   beforeEach(() => reset(sequencerServiceMock))
-
-  const sequencerPrefix = Prefix.fromString('ESW.iris_darknight')
 
   const insertBreakpointTests: [string, GenericResponse, string][] = [
     [
@@ -26,14 +20,14 @@ describe('Breakpoint actions', () => {
       {
         _type: 'Ok'
       },
-      'Successfully inserted breakpoint'
+      insertBreakPointConstants.successMessage
     ],
     [
       'CannotOperateOnAnInFlightOrFinishedStep',
       {
         _type: 'CannotOperateOnAnInFlightOrFinishedStep'
       },
-      'Failed to insert breakpoint, reason: Cannot operate on in progress or finished step'
+      `${insertBreakPointConstants.failureMessage}, reason: ${stepConstants.cannotOperateOnAnInFlightOrFinishedStepMsg}`
     ],
     [
       'Unhandled',
@@ -43,7 +37,7 @@ describe('Breakpoint actions', () => {
         state: 'Idle',
         messageType: 'Unhandled'
       },
-      'Failed to insert breakpoint, reason: Cannot add breakpoint in idle state'
+      `${insertBreakPointConstants.failureMessage}, reason: Cannot add breakpoint in idle state`
     ],
     [
       'IdDoesNotExist',
@@ -51,7 +45,7 @@ describe('Breakpoint actions', () => {
         _type: 'IdDoesNotExist',
         id: 'step1'
       },
-      'Failed to insert breakpoint, reason: step1 does not exist'
+      `${insertBreakPointConstants.failureMessage}, reason: ${stepConstants.idDoesNotExistMsg('step1')}`
     ]
   ]
 
@@ -67,16 +61,10 @@ describe('Breakpoint actions', () => {
       when(sequencerServiceMock.addBreakpoint(step.id)).thenResolve(res)
 
       renderWithAuth({
-        ui: (
-          <BreakpointAction
-            sequencerPrefix={sequencerPrefix}
-            step={step}
-            isDisabled={false}
-          />
-        )
+        ui: <MenuWithStepListContext menuItem={<BreakpointAction step={step} isDisabled={false} />} />
       })
 
-      const insertBreakpoint = await screen.findByText('Insert breakpoint')
+      const insertBreakpoint = await screen.findByText(insertBreakPointConstants.menuItemText)
       userEvent.click(insertBreakpoint, { button: 0 })
 
       await screen.findByText(message)
@@ -91,7 +79,7 @@ describe('Breakpoint actions', () => {
       {
         _type: 'Ok'
       },
-      'Successfully removed breakpoint'
+      removeBreakPointConstants.successMessage
     ],
     [
       'Unhandled',
@@ -101,7 +89,7 @@ describe('Breakpoint actions', () => {
         state: 'Idle',
         messageType: 'Unhandled'
       },
-      'Failed to remove breakpoint, reason: Cannot remove breakpoint in idle state'
+      `${removeBreakPointConstants.failureMessage}, reason: Cannot remove breakpoint in idle state`
     ],
     [
       'IdDoesNotExist',
@@ -109,7 +97,7 @@ describe('Breakpoint actions', () => {
         _type: 'IdDoesNotExist',
         id: 'step1'
       },
-      'Failed to remove breakpoint, reason: step1 does not exist'
+      `${removeBreakPointConstants.failureMessage}, reason: ${stepConstants.idDoesNotExistMsg('step1')}`
     ]
   ]
 
@@ -125,16 +113,10 @@ describe('Breakpoint actions', () => {
       when(sequencerServiceMock.removeBreakpoint(step.id)).thenResolve(res)
 
       renderWithAuth({
-        ui: (
-          <BreakpointAction
-            sequencerPrefix={sequencerPrefix}
-            step={step}
-            isDisabled={false}
-          />
-        )
+        ui: <MenuWithStepListContext menuItem={<BreakpointAction step={step} isDisabled={false} />} />
       })
 
-      const removeBreakpoint = await screen.findByText('Remove breakpoint')
+      const removeBreakpoint = await screen.findByText(removeBreakPointConstants.menuItemText)
       userEvent.click(removeBreakpoint, { button: 0 })
 
       await screen.findByText(message)

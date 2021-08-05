@@ -1,23 +1,11 @@
 import { Layout, Menu } from 'antd'
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import {
-  InfraIcon,
-  ResourceIcon,
-  TelescopeIcon
-} from '../../../components/icons'
-import {
-  INFRASTRUCTURE,
-  OBSERVATIONS,
-  RESOURCES
-} from '../../../routes/RoutesConfig'
+import { InfraIcon, ResourceIcon, TelescopeIcon } from '../../../components/icons'
+import { INFRASTRUCTURE, OBSERVATIONS, RESOURCES } from '../../../routes/RoutesConfig'
 import styles from './sider.module.css'
 
-const getMenuLabel = (
-  title: string,
-  defaultIcon: React.ReactNode,
-  link: string
-) => ({
+const getMenuLabel = (title: string, defaultIcon: React.ReactNode, link: string) => ({
   title,
   link,
   role: title.replace(' ', ''),
@@ -25,21 +13,9 @@ const getMenuLabel = (
 })
 
 const menuItemLabels = [
-  getMenuLabel(
-    'Manage Infrastructure',
-    <InfraIcon className={styles.menuIconSize} />,
-    INFRASTRUCTURE
-  ),
-  getMenuLabel(
-    'Manage Observations',
-    <TelescopeIcon className={styles.menuIconSize} />,
-    OBSERVATIONS
-  ),
-  getMenuLabel(
-    'Resources',
-    <ResourceIcon className={styles.menuIconSize} />,
-    RESOURCES
-  )
+  getMenuLabel('Manage Infrastructure', <InfraIcon className={styles.menuIconSize} />, INFRASTRUCTURE),
+  getMenuLabel('Manage Observations', <TelescopeIcon className={styles.menuIconSize} />, OBSERVATIONS),
+  getMenuLabel('Resources', <ResourceIcon className={styles.menuIconSize} />, RESOURCES)
 ]
 
 export const Sider = (): JSX.Element => {
@@ -54,14 +30,11 @@ export const Sider = (): JSX.Element => {
   }, [location])
 
   return (
-    <Layout.Sider
-      theme={'light'}
-      collapsible
-      collapsed={collapsed}
-      onCollapse={onCollapse}>
-      <Menu selectedKeys={[selectedKey]}>
+    <Layout.Sider theme={'light'} collapsible collapsed={collapsed} onCollapse={onCollapse} width={215}>
+      <Menu selectedKeys={[selectedKey]} mode='inline'>
         {menuItemLabels.map((item) => (
           <Menu.Item
+            title={item.title}
             className={styles.menuItem}
             icon={item.defaultIcon}
             onClick={() => setSelectedKey(item.link)}

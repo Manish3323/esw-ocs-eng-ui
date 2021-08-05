@@ -9,29 +9,27 @@ import { RTMReporter } from './dist/test/utils/RTMReporter.js'
 process.env.NODE_ENV = 'test'
 
 export default {
+  testFramework: {
+    config: {
+      timeout: '3000'
+    }
+  },
   plugins: [
     plugin(),
     importMapsPlugin({
       inject: {
         importMap: {
           imports: {
-            './_dist_/features/sequencer/hooks/useSequencerService.js':
-              './dist_test/mocks/useSequencerService.js',
-            './_dist_/contexts/ConfigServiceContext.js':
-              './dist_test/mocks/ConfigServiceContext.js'
+            './dist/features/sequencer/hooks/useSequencerService.js': './dist_test/mocks/useSequencerService.js',
+            './dist/contexts/ConfigServiceContext.js': './dist_test/mocks/ConfigServiceContext.js'
           }
         }
       }
     })
   ],
-  reporters: [
-    defaultReporter({ reportTestResults: false, reportTestProgress: true }),
-    ConsoleReporter(),
-    RTMReporter()
-  ],
+  reporters: [defaultReporter({ reportTestResults: true, reportTestProgress: true }), ConsoleReporter(), RTMReporter()],
   coverageConfig: {
     exclude: ['_snowpack/**/*'],
     threshold: { statements: 90, branches: 85, functions: 64, lines: 90 }
-  },
-  browserLogs: false
+  }
 }

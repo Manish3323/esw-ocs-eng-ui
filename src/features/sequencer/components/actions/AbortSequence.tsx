@@ -1,62 +1,31 @@
-import { ExclamationCircleOutlined } from '@ant-design/icons'
-import type {
-  OkOrUnhandledResponse,
-  Prefix,
-  SequencerService
-} from '@tmtsoftware/esw-ts'
-import { Button, Modal } from 'antd'
+import type { OkOrUnhandledResponse, SequencerService } from '@tmtsoftware/esw-ts'
+import { Button } from 'antd'
 import React from 'react'
+import { showConfirmModal } from '../../../../components/modal/showConfirmModal'
 import { useMutation, UseMutationResult } from '../../../../hooks/useMutation'
 import { errorMessage, successMessage } from '../../../../utils/message'
-import { GET_SEQUENCE, SEQUENCER_STATE } from '../../../queryKeys'
 import { useSequencerService } from '../../hooks/useSequencerService'
+import { abortSequenceConstants } from '../../sequencerConstants'
 import type { SequencerProps } from '../Props'
 
-const showConfirmModal = (onYes: () => void): void => {
-  Modal.confirm({
-    title: 'Do you want to abort the sequence?',
-    icon: <ExclamationCircleOutlined />,
-    centered: true,
-    okText: 'Abort',
-    okButtonProps: {
-      danger: true,
-      type: 'primary'
-    },
-    closable: true,
-    maskClosable: true,
-    cancelText: 'Cancel',
-    onOk: () => onYes()
-  })
-}
-
-const useAbortSequence = (
-  prefix: Prefix
-): UseMutationResult<OkOrUnhandledResponse, unknown, SequencerService> => {
-  const mutationFn = (sequencerService: SequencerService) =>
-    sequencerService.abortSequence()
+const useAbortSequence = (): UseMutationResult<OkOrUnhandledResponse, unknown, SequencerService> => {
+  const mutationFn = (sequencerService: SequencerService) => sequencerService.abortSequence()
 
   return useMutation({
     mutationFn,
     onSuccess: (res) => {
-      if (res._type === 'Ok')
-        return successMessage('Successfully aborted the Sequence')
-      return errorMessage('Failed to abort the Sequence', Error(res.msg))
+      if (res._type === 'Ok') return successMessage(abortSequenceConstants.successMessage)
+      return errorMessage(abortSequenceConstants.failureMessage, Error(res.msg))
     },
-    onError: (e) => errorMessage('Failed to abort the Sequence', e),
-    invalidateKeysOnSuccess: [
-      [SEQUENCER_STATE.key, prefix.toJSON()],
-      [GET_SEQUENCE.key, prefix.toJSON()]
-    ],
-    useErrorBoundary: false
+    onError: (e) => errorMessage(abortSequenceConstants.failureMessage, e)
   })
 }
 
-export const AbortSequence = ({
-  prefix,
-  sequencerState
-}: SequencerProps): JSX.Element => {
+type AbortSequenceProps = Omit<SequencerProps, 'sequencerState'>
+
+export const AbortSequence = ({ prefix, isSequencerRunning }: AbortSequenceProps): JSX.Element => {
   const sequencerService = useSequencerService(prefix)
-  const abortAction = useAbortSequence(prefix)
+  const abortAction = useAbortSequence()
 
   return (
     <Button
@@ -64,12 +33,16 @@ export const AbortSequence = ({
       loading={abortAction.isLoading}
       onClick={() =>
         sequencerService &&
-        showConfirmModal(() => {
-          abortAction.mutate(sequencerService)
-        })
+        showConfirmModal(
+          () => {
+            abortAction.mutate(sequencerService)
+          },
+          abortSequenceConstants.modalTitle,
+          abortSequenceConstants.modalOkText
+        )
       }
-      disabled={!sequencerState || sequencerState !== 'Running'}>
-      Abort sequence
+      disabled={!isSequencerRunning}>
+      {abortSequenceConstants.buttonText}
     </Button>
   )
 }

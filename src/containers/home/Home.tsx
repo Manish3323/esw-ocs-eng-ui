@@ -3,11 +3,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { InfraIcon, ResourceIcon, TelescopeIcon } from '../../components/icons'
 import { SMCard } from '../../features/sm/components/smcard/SMCard'
-import {
-  INFRASTRUCTURE,
-  OBSERVATIONS,
-  RESOURCES
-} from '../../routes/RoutesConfig'
+import { INFRASTRUCTURE, OBSERVATIONS, RESOURCES } from '../../routes/RoutesConfig'
 import styles from './home.module.css'
 
 type CardDetail = {
@@ -31,17 +27,13 @@ const HomePageCard = (card: CardDetail) => (
 
 const InfraCard = HomePageCard({
   title: 'Manage Infrastructure',
-  icon: (
-    <InfraIcon className={styles.commonIconSize} fill={'var(--activeColor)'} />
-  ),
+  icon: <InfraIcon className={styles.commonIconSize} fill={'var(--activeColor)'} />,
   link: INFRASTRUCTURE
 })
 
 const ObservationCard = HomePageCard({
   title: 'Manage Observations',
-  icon: (
-    <TelescopeIcon className={styles.commonIconSize} fill={'var(--purple)'} />
-  ),
+  icon: <TelescopeIcon className={styles.commonIconSize} fill={'var(--purple)'} />,
   link: OBSERVATIONS
 })
 

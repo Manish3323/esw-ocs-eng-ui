@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect } from 'chai'
 import React from 'react'
@@ -14,13 +14,13 @@ describe('SelectionModal', () => {
       selectedItem: '',
       visible: true
     }
-    const { getByText, getByRole } = render(<SelectionModal {...modalProps} />)
+    render(<SelectionModal {...modalProps} />)
 
-    const title = getByText('some-title')
-    const data1 = getByRole('menuitem', {
+    const title = screen.getByText('some-title')
+    const data1 = screen.getByRole('menuitem', {
       name: 'data-1'
     })
-    const data2 = getByRole('menuitem', {
+    const data2 = screen.getByRole('menuitem', {
       name: 'data-2'
     })
 
@@ -39,9 +39,9 @@ describe('SelectionModal', () => {
       selectedItem: '',
       visible: true
     }
-    const { getByRole } = render(<SelectionModal {...modalProps} />)
+    render(<SelectionModal {...modalProps} />)
 
-    const data1 = getByRole('menuitem', {
+    const data1 = screen.getByRole('menuitem', {
       name: 'data-1'
     })
 
@@ -62,10 +62,10 @@ describe('SelectionModal', () => {
       selectedItem: 'data-1',
       visible: true
     }
-    const { getByRole } = render(<SelectionModal {...modalProps} />)
+    render(<SelectionModal {...modalProps} />)
 
-    const okButton = getByRole('button', { name: 'Start' })
-    const cancelButton = getByRole('button', { name: 'Cancel' })
+    const okButton = screen.getByRole('button', { name: 'Start' })
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' })
 
     userEvent.click(okButton)
     expect(value).eq('Ok')
@@ -86,9 +86,9 @@ describe('SelectionModal', () => {
       selectedItem: '',
       visible: true
     }
-    const { getByRole } = render(<SelectionModal {...modalProps} />)
+    render(<SelectionModal {...modalProps} />)
 
-    const okButton = getByRole('button', { name: 'Start' })
+    const okButton = screen.getByRole('button', { name: 'Start' })
 
     userEvent.click(okButton)
     expect(value).eq('value not changed')
@@ -106,8 +106,8 @@ describe('SelectionModal', () => {
       visible: false
     }
 
-    const { queryByText } = render(<SelectionModal {...modalProps} />)
-    expect(queryByText('some-title')).to.null
+    render(<SelectionModal {...modalProps} />)
+    expect(screen.queryByText('some-title')).to.null
   })
 
   it('should show empty if data is not present | ESW-441', () => {
@@ -122,14 +122,10 @@ describe('SelectionModal', () => {
       visible: true
     }
 
-    const { queryByRole, getByText } = render(
-      <SelectionModal {...modalProps} />
-    )
+    render(<SelectionModal {...modalProps} />)
 
-    expect(getByText('No Data')).to.exist
-    expect(queryByRole('menuitem')).to.null
-    expect(
-      (queryByRole('button', { name: 'Start' }) as HTMLButtonElement).disabled
-    ).to.true
+    expect(screen.getByText('No Data')).to.exist
+    expect(screen.queryByRole('menuitem')).to.null
+    expect((screen.queryByRole('button', { name: 'Start' }) as HTMLButtonElement).disabled).to.true
   })
 })

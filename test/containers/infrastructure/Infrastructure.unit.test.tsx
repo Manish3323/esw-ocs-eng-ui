@@ -24,6 +24,7 @@ import { AgentServiceProvider } from '../../../src/contexts/AgentServiceContext'
 import { SMServiceProvider } from '../../../src/contexts/SMContext'
 import { ProvisionButton } from '../../../src/features/sm/components/provision/ProvisionButton'
 import { PROVISION_CONF_PATH } from '../../../src/features/sm/constants'
+import { configureConstants, provisionConstants } from '../../../src/features/sm/smConstants'
 import { mockServices, renderWithAuth } from '../../utils/test-utils'
 
 const obsModeDetails: ObsModesDetailsResponse = {
@@ -44,10 +45,7 @@ const agentStatus: AgentStatus = {
   agentId: new ComponentId(new Prefix('APS', 'jdks'), 'Machine'),
   seqCompsStatus: [
     {
-      seqCompId: new ComponentId(
-        new Prefix('ESW', 'DARKNIGHT'),
-        'SequenceComponent'
-      ),
+      seqCompId: new ComponentId(new Prefix('ESW', 'DARKNIGHT'), 'SequenceComponent'),
       sequencerLocation: []
     }
   ]
@@ -55,10 +53,7 @@ const agentStatus: AgentStatus = {
 
 const successResponse: ConfigureResponse = {
   _type: 'Success',
-  masterSequencerComponentId: new ComponentId(
-    Prefix.fromString('ESW.primary'),
-    'Sequencer'
-  )
+  masterSequencerComponentId: new ComponentId(Prefix.fromString('ESW.primary'), 'Sequencer')
 }
 
 describe('Infrastructure page', () => {
@@ -90,8 +85,8 @@ describe('Infrastructure page', () => {
 
     screen.getByText('Sequence Manager')
     screen.getByText('Manage Infrastructure')
-    await screen.findByRole('button', { name: 'Provision' })
-    await screen.findByRole('button', { name: 'Configure' })
+    await screen.findByRole('button', { name: provisionConstants.buttonText })
+    await screen.findByRole('button', { name: configureConstants.buttonText })
 
     await waitFor(() => verify(agentService.getAgentStatus()).called())
   })
@@ -143,11 +138,7 @@ describe('Infrastructure page', () => {
 
     renderWithAuth({
       ui: (
-        <SMServiceProvider
-          initialValue={[
-            { smService: mockServices.instance.smService, smLocation },
-            false
-          ]}>
+        <SMServiceProvider initialValue={[{ smService: mockServices.instance.smService, smLocation }, false]}>
           <Infrastructure />
         </SMServiceProvider>
       )
@@ -173,12 +164,12 @@ describe('Infrastructure page', () => {
     renderWithAuth({
       ui: <Infrastructure />
     })
-    const button = await screen.findByRole('button', { name: 'Configure' })
+    const button = await screen.findByRole('button', { name: configureConstants.buttonText })
     userEvent.click(button, { button: 1 })
 
     //verify only configurable obsmodes are shown in the list
     const dialog = await screen.findByRole('dialog', {
-      name: 'Select an Observation Mode to configure:'
+      name: configureConstants.modalTitle
     })
 
     const darkNightObsMode = await screen.findByRole('menuitem', {
@@ -190,7 +181,7 @@ describe('Infrastructure page', () => {
     // wait for button to be enabled.
     await waitFor(() => {
       const configureButton = within(dialog).getByRole('button', {
-        name: 'Configure'
+        name: configureConstants.modalOkText
       }) as HTMLButtonElement
       expect(configureButton.disabled).false
       userEvent.click(configureButton)
@@ -199,10 +190,9 @@ describe('Infrastructure page', () => {
     verify(smService.getObsModesDetails()).called()
 
     verify(smService.configure(deepEqual(darkNight))).called()
-    expect(await screen.findByText('ESW_DARKNIGHT has been configured.')).to
-      .exist
+    expect(await screen.findByText(configureConstants.getSuccessMessage('ESW_DARKNIGHT'))).to.exist
     verify(agentService.getAgentStatus()).called()
-    expect(screen.queryByRole('ESW_DARKNIGHT has been configured.')).to.null
+    expect(screen.queryByRole(configureConstants.getSuccessMessage('ESW_DARKNIGHT'))).to.null
   })
 
   it('should refetch agent cards after provision success | ESW-443', async () => {
@@ -228,9 +218,7 @@ describe('Infrastructure page', () => {
       agentStatus: [],
       seqCompsWithoutAgent: []
     })
-    when(configService.getActive(PROVISION_CONF_PATH)).thenResolve(
-      ConfigData.fromString(JSON.stringify(confData))
-    )
+    when(configService.getActive(PROVISION_CONF_PATH)).thenResolve(ConfigData.fromString(JSON.stringify(confData)))
 
     when(smService.provision(deepEqual(provisionConfig))).thenResolve({
       _type: 'Success'
@@ -240,7 +228,7 @@ describe('Infrastructure page', () => {
     })
 
     const provisionButton = (await screen.findByRole('button', {
-      name: 'Provision'
+      name: provisionConstants.buttonText
     })) as HTMLButtonElement
 
     await waitFor(() => expect(provisionButton.disabled).false)
@@ -250,12 +238,12 @@ describe('Infrastructure page', () => {
 
     const document = await screen.findByRole('document')
     const confirmButton = within(document).getByRole('button', {
-      name: 'Provision'
+      name: provisionConstants.modalOkText
     })
 
     userEvent.click(confirmButton)
 
-    await screen.findByText('Successfully provisioned')
+    await screen.findByText(provisionConstants.successMessage)
 
     verify(smService.provision(deepEqual(provisionConfig))).called()
   })

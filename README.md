@@ -2,7 +2,7 @@
 
 This project is a React web application.
 
-## Prerequisites Required for Running OCS-UI Application
+## Prerequisites required for running ESW-OCS-ENG-UI application
 
 1. csw-services should be up & running.
     using sbt shell inside CSW `csw-services/run start -k -c`.
@@ -11,20 +11,22 @@ This project is a React web application.
     run `sbt publishLocal` inside ESW sbt shell.
     Note: This step needs to be done atleast once and/or whenever new changes of esw are pulled from github.
 
-3a. `AgentService` along with one or more `Agent's` should be up & running.
-    using sbt shell inside ESW `esw-services/run start --agent --agent-service`.
+3. Start esw services
+    * `AgentService` along with one or more agent should be up & running. To start, run following command inside ESW sbt shell `esw-services/run start --agent --agent-service`.
 
-3b. Alternatively, to run esw-services with a simulated Sequence Manager, use
+    * Alternatively, to run esw-services with a simulated Sequence Manager, use
     `esw-services/run start --agent-service -s --simulation`
+
+    * You can use `esw-services/run start-eng-ui-services` command to start all the services and agents required to test the scripts written in repo sequncer-scripts/ui-setup branch.
 
 The `v15.x` version of [Node.js](https://nodejs.org/en/download/package-manager/) must be installed.
 
 ## User role for login
 
-For testing purposes, we are creating a `esw-user` while launching the Keycloak from csw-services
+For testing purposes, we are creating a `osw-user1` while launching the Keycloak from csw-services
 
-Username: esw-user
-Password: esw-user
+Username: osw-user1
+Password: osw-user1
 
 ## Run the Application in Local Environment
 
@@ -55,8 +57,16 @@ npm run build
 
 ## Running Tests
 
+To run test:
+
 ```bash
 npm test
+```
+
+To run test in watch mode:
+
+```bash
+npm run test:unit:watch
 ```
 
 ## How to Use the Project
@@ -87,4 +97,3 @@ The project has following structure:
 
 * ESW-TS Library - [Link](https://github.com/tmtsoftware/esw-ts/)
 * ESW-TS Library Documentation - [Link](https://tmtsoftware.github.io/esw-ts/)
-  

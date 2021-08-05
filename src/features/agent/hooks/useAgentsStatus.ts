@@ -1,17 +1,9 @@
-import {
-  AgentStatus,
-  AgentStatusSuccess,
-  ComponentId,
-  Prefix
-} from '@tmtsoftware/esw-ts'
+import { AgentStatus, AgentStatusSuccess, ComponentId, Prefix } from '@tmtsoftware/esw-ts'
 import { useAgentService } from '../../../contexts/AgentServiceContext'
 import { useQuery, UseQueryResult } from '../../../hooks/useQuery'
 import { AGENTS_STATUS } from '../../queryKeys'
 
-export const UNKNOWN_AGENT = new ComponentId(
-  new Prefix('ESW', 'Unknown'),
-  'Machine'
-)
+export const UNKNOWN_AGENT = new ComponentId(new Prefix('ESW', 'Unknown'), 'Machine')
 
 const assignUnknownAgents = (agentStatus: AgentStatusSuccess) => {
   if (agentStatus.seqCompsWithoutAgent.length === 0) {
@@ -31,9 +23,7 @@ export const useAgentsStatus = (): UseQueryResult<AgentStatus[], unknown> => {
     AGENTS_STATUS.key,
     async () => {
       const agentStatus = await agentService?.getAgentStatus()
-      return agentStatus?._type === 'Success'
-        ? assignUnknownAgents(agentStatus)
-        : []
+      return agentStatus?._type === 'Success' ? assignUnknownAgents(agentStatus) : []
     },
     {
       enabled: !!agentService,

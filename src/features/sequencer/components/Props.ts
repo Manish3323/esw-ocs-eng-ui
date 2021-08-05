@@ -1,6 +1,7 @@
-import type { Prefix, SequencerStateResponse } from '@tmtsoftware/esw-ts'
+import type { Prefix, SequencerState } from '@tmtsoftware/esw-ts'
 
 export type SequencerProps = {
   prefix: Prefix
-  sequencerState?: SequencerStateResponse['_type']
+  sequencerState: SequencerState['_type']
+  isSequencerRunning?: boolean
 }

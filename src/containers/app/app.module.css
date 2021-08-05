@@ -8,6 +8,7 @@
 }
 
 .tmtHeader {
+  padding: 1.5rem;
   display: flex;
   background-color: white;
   flex-direction: row;

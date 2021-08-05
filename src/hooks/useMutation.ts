@@ -1,9 +1,4 @@
-import {
-  QueryKey,
-  useMutation as useReactMutation,
-  UseMutationResult,
-  useQueryClient
-} from 'react-query'
+import { QueryKey, useMutation as useReactMutation, UseMutationResult, useQueryClient } from 'react-query'
 
 type UseMutationProps<S, T> = {
   mutationFn: (service: S) => Promise<T>
@@ -24,10 +19,7 @@ export const useMutation = <S, T>({
 
   return useReactMutation(mutationFn, {
     onSuccess: async (data) => {
-      invalidateKeysOnSuccess &&
-        (await Promise.all(
-          invalidateKeysOnSuccess.map((key) => qc.invalidateQueries(key))
-        ))
+      invalidateKeysOnSuccess && (await Promise.all(invalidateKeysOnSuccess.map((key) => qc.invalidateQueries(key))))
       onSuccess(data)
     },
     onError: (e) => onError(e),

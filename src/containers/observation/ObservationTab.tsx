@@ -1,13 +1,13 @@
 import type { Subsystem } from '@tmtsoftware/esw-ts'
 import { Empty, Layout, Menu } from 'antd'
-import { Content } from 'antd/lib/layout/layout'
-import React from 'react'
+import React, { useState } from 'react'
 import type { ResourceTableStatus } from '../../features/sequencer/components/ResourcesTable'
 import { useObsModesDetails } from '../../features/sm/hooks/useObsModesDetails'
-import { CurrentObsMode } from './CurrentObsMode'
+import globalStyles from '../../index.module.css'
 import type { TabName } from './ObservationTabs'
+import { SelectedObsMode } from './SelectedObsMode'
 
-const { Sider } = Layout
+const { Sider, Content } = Layout
 
 const getTabBasedResources = (
   currentTab: TabName,
@@ -27,60 +27,37 @@ const getTabBasedResources = (
   }))
 }
 
-export type ObservationTabProps = {
-  tabName: TabName
-  selected?: string
-  setObservation: (_: string) => void
-}
+export const ObservationTab = ({ tabName }: { tabName: TabName }): JSX.Element => {
+  const [selectedObservation, setSelectedObservation] = useState<string>('')
+  const { data: allObsModesGrouped } = useObsModesDetails()
+  const thisTabObsModes = allObsModesGrouped ? allObsModesGrouped[tabName] : []
 
-export const ObservationTab = ({
-  tabName,
-  selected = '',
-  setObservation
-}: ObservationTabProps): JSX.Element => {
-  const { data: grouped } = useObsModesDetails()
+  if (!thisTabObsModes.length)
+    return (
+      <div className={globalStyles.centeredFlexElement} style={{ height: '90%' }}>
+        <Empty description={`No ${tabName} ObsModes`} />
+      </div>
+    )
 
   const runningResources = [
-    ...new Set(
-      grouped && grouped.Running.flatMap((obsMode) => obsMode.resources)
-    )
+    ...new Set(allObsModesGrouped && allObsModesGrouped.Running.flatMap((obsMode) => obsMode.resources))
   ]
-
-  const data = grouped ? grouped[tabName] : []
-  const selectedObs = data.find((x) => x.obsMode.name === selected) ?? data[0]
-
-  if (!data.length) return <Empty description={`No ${tabName} ObsModes`} />
-
-  const resources = getTabBasedResources(
-    tabName,
-    selectedObs.resources,
-    runningResources
-  )
+  const selectedObs = thisTabObsModes.find((x) => x.obsMode.name === selectedObservation) ?? thisTabObsModes[0]
+  const resources = getTabBasedResources(tabName, selectedObs.resources, runningResources)
 
   return (
     <Layout style={{ height: '99%' }}>
       <Sider theme='light' style={{ overflowY: 'scroll' }} width={'13rem'}>
-        <Menu
-          selectedKeys={selectedObs && [selectedObs.obsMode.name]}
-          style={{ paddingTop: '0.4rem' }}>
-          {data.map((item) => (
-            <Menu.Item
-              onClick={() => setObservation(item.obsMode.name)}
-              key={item.obsMode.name}>
+        <Menu mode='inline' selectedKeys={selectedObs && [selectedObs.obsMode.name]} style={{ paddingTop: '1rem' }}>
+          {thisTabObsModes.map((item) => (
+            <Menu.Item onClick={() => setSelectedObservation(item.obsMode.name)} key={item.obsMode.name}>
               {item.obsMode.name}
             </Menu.Item>
           ))}
         </Menu>
       </Sider>
       <Content style={{ marginRight: '2rem' }}>
-        {selectedObs && (
-          <CurrentObsMode
-            obsMode={selectedObs.obsMode}
-            sequencers={selectedObs.sequencers}
-            resources={resources}
-            currentTab={tabName}
-          />
-        )}
+        {selectedObs && <SelectedObsMode obsModeDetails={selectedObs} resources={resources} currentTab={tabName} />}
       </Content>
     </Layout>
   )

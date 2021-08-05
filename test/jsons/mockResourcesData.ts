@@ -21,7 +21,8 @@ export default <ObsModesDetailsResponseSuccess>(<unknown>{
     {
       obsMode: new ObsMode('DarkNight_3'),
       status: {
-        _type: 'NonConfigurable'
+        _type: 'NonConfigurable',
+        missingSequenceComponents: []
       },
       resources: ['TCS', 'WFOS'],
       sequencers: ['ESW', 'TCS']

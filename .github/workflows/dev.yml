@@ -30,7 +30,7 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Install
-        run: npm ci --no-package-lock
+        run: npm ci
 
 
       - name: Build

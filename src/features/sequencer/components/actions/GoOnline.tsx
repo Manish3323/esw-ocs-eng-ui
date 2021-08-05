@@ -1,57 +1,37 @@
-import type {
-  GoOnlineResponse,
-  Prefix,
-  SequencerService
-} from '@tmtsoftware/esw-ts'
+import type { GoOnlineResponse, SequencerService } from '@tmtsoftware/esw-ts'
 import { Button } from 'antd'
 import React from 'react'
 import { useMutation, UseMutationResult } from '../../../../hooks/useMutation'
 import { errorMessage, successMessage } from '../../../../utils/message'
-import { SEQUENCER_STATE, SEQUENCER_STATUS } from '../../../queryKeys'
 import { useSequencerService } from '../../hooks/useSequencerService'
+import { goOnlineConstants } from '../../sequencerConstants'
 import type { SequencerProps } from '../Props'
 
-const useGoOnlineAction = (
-  prefix: Prefix
-): UseMutationResult<GoOnlineResponse, unknown, SequencerService> => {
-  const mutationFn = (sequencerService: SequencerService) =>
-    sequencerService.goOnline()
+const useGoOnlineAction = (): UseMutationResult<GoOnlineResponse, unknown, SequencerService> => {
+  const mutationFn = (sequencerService: SequencerService) => sequencerService.goOnline()
 
   return useMutation({
     mutationFn,
     onSuccess: (res) => {
-      if (res._type === 'Ok')
-        return successMessage('Sequencer is online successfully')
+      if (res._type === 'Ok') return successMessage(goOnlineConstants.successMessage)
       return errorMessage(
-        'Sequencer failed to go Online',
+        goOnlineConstants.failureMessage,
         Error(res._type === 'GoOnlineHookFailed' ? res._type : res.msg)
       )
     },
-    onError: (e) => errorMessage('Sequencer failed to go Online', e),
-    invalidateKeysOnSuccess: [
-      [SEQUENCER_STATE.key, prefix.toJSON()],
-      [SEQUENCER_STATUS.key, prefix.toJSON()]
-    ],
-    useErrorBoundary: false
+    onError: (e) => errorMessage(goOnlineConstants.failureMessage, e)
   })
 }
 
-export const GoOnline = ({
-  prefix,
-  sequencerState
-}: SequencerProps): JSX.Element => {
+export const GoOnline = ({ prefix, sequencerState }: SequencerProps): JSX.Element => {
   const sequencerService = useSequencerService(prefix)
-  const goOnlineAction = useGoOnlineAction(prefix)
+  const goOnlineAction = useGoOnlineAction()
 
-  const goOnline = () =>
-    sequencerService && goOnlineAction.mutate(sequencerService)
+  const goOnline = () => sequencerService && goOnlineAction.mutate(sequencerService)
 
   return (
-    <Button
-      disabled={!sequencerState || sequencerState === 'Running'}
-      loading={goOnlineAction.isLoading}
-      onClick={() => goOnline()}>
-      Go online
+    <Button disabled={sequencerState === 'Running'} loading={goOnlineAction.isLoading} onClick={() => goOnline()}>
+      {goOnlineConstants.buttonText}
     </Button>
   )
 }

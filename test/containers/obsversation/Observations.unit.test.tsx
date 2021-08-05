@@ -1,33 +1,34 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { ObsModesDetailsResponseSuccess } from '@tmtsoftware/esw-ts'
+import {
+  AkkaConnection,
+  AkkaLocation,
+  ObsMode,
+  ObsModesDetailsResponseSuccess,
+  Prefix,
+  StepList
+} from '@tmtsoftware/esw-ts'
 import { expect } from 'chai'
 import React from 'react'
-import { resetCalls, verify, when } from 'ts-mockito'
+import { BrowserRouter } from 'react-router-dom'
+import { anything, deepEqual, resetCalls, verify, when } from 'ts-mockito'
 import { Observations } from '../../../src/containers/observation/Observations'
-import {
-  configurableObsModesData,
-  nonConfigurableObsModesData,
-  obsModesData
-} from '../../jsons/obsmodes'
-import {
-  mockServices,
-  renderWithAuth,
-  sequencerServiceMock
-} from '../../utils/test-utils'
+import { observationShutdownConstants } from '../../../src/features/sequencer/sequencerConstants'
+import { configurableObsModesData, nonConfigurableObsModesData, obsModesData } from '../../jsons/obsmodes'
+import { getObsModes } from '../../utils/observationUtils'
+import { mockServices, renderWithAuth, sequencerServiceMock } from '../../utils/test-utils'
 
 describe('Observation page', () => {
   beforeEach(() => resetCalls(sequencerServiceMock))
   it('should render observation page with three tabs | ESW-450', async () => {
     const smService = mockServices.mock.smService
-
-    renderWithAuth({
-      ui: <Observations />
-    })
-
     when(smService.getObsModesDetails()).thenResolve({
       _type: 'Success',
       obsModes: []
+    })
+
+    renderWithAuth({
+      ui: <Observations />
     })
 
     const header = screen.getByText('Manage Observation')
@@ -50,13 +51,13 @@ describe('Observation page', () => {
   it('should render no obsModes if no obsModes are available in tab | ESW-450', async () => {
     const smService = mockServices.mock.smService
 
-    renderWithAuth({
-      ui: <Observations />
-    })
-
     when(smService.getObsModesDetails()).thenResolve({
       _type: 'Success',
       obsModes: []
+    })
+
+    renderWithAuth({
+      ui: <Observations />
     })
 
     const configurableTab = screen.getByRole('tab', { name: 'Configurable' })
@@ -82,21 +83,23 @@ describe('Observation page', () => {
     })
   })
 
-  it('should render running obsModes | ESW-450', async () => {
+  it('should render running obsModes | ESW-450, ESW-489', async () => {
     const smService = mockServices.mock.smService
     when(smService.getObsModesDetails()).thenResolve(obsModesData)
-    when(sequencerServiceMock.getSequencerState()).thenResolve({
-      _type: 'Loaded'
-    })
+    setSequencerServiceMockForLoadedState()
 
     renderWithAuth({
-      ui: <Observations />
+      ui: (
+        <BrowserRouter>
+          <Observations />
+        </BrowserRouter>
+      )
     })
 
     await screen.findByRole('menuitem', { name: 'DarkNight_1' })
     await screen.findByRole('menuitem', { name: 'DarkNight_8' })
 
-    const shutdownButton = screen.getByRole('button', { name: 'Shutdown' })
+    const shutdownButton = screen.getByRole('button', { name: observationShutdownConstants.buttonText })
 
     expect(shutdownButton).to.exist
     expect(screen.getAllByText('DarkNight_1')).to.have.length(2)
@@ -104,11 +107,7 @@ describe('Observation page', () => {
   })
 
   const tabTests: [string, string[], ObsModesDetailsResponseSuccess][] = [
-    [
-      'Non-configurable',
-      ['DarkNight_3', 'DarkNight_5'],
-      nonConfigurableObsModesData
-    ],
+    ['Non-configurable', ['DarkNight_3', 'DarkNight_5'], nonConfigurableObsModesData],
     ['Configurable', ['DarkNight_2', 'DarkNight_6'], configurableObsModesData]
   ]
 
@@ -123,9 +122,6 @@ describe('Observation page', () => {
         seqCompsWithoutAgent: []
       })
       when(smService.getObsModesDetails()).thenResolve(data)
-      when(sequencerServiceMock.getSequencerState()).thenReject(
-        new Error('No sequencer present')
-      )
 
       renderWithAuth({
         ui: <Observations />
@@ -170,6 +166,52 @@ describe('Observation page', () => {
       verify(smService.getObsModesDetails()).called()
     })
   })
+  it(`should render correct status when running obsmode is shutdown and configurable tab is clicked | ESW-450, ESW-489`, async () => {
+    const smService = mockServices.mock.smService
+
+    when(smService.getObsModesDetails())
+      .thenResolve(getObsModes({ _type: 'Configured' }))
+      .thenResolve(getObsModes({ _type: 'Configurable' }))
+    const obsMode = new ObsMode('DarkNight_1')
+    when(smService.shutdownObsModeSequencers(deepEqual(obsMode))).thenResolve({
+      _type: 'Success'
+    })
+
+    setSequencerServiceMockForLoadedState()
+
+    renderWithAuth({
+      ui: (
+        <BrowserRouter>
+          <Observations />
+        </BrowserRouter>
+      )
+    })
+
+    await screen.findByRole('menuitem', { name: 'DarkNight_1' })
+    const runningTabPanel = await screen.findByRole('tabpanel')
+    await within(runningTabPanel).findByText('Loaded')
+    const shutdownButton = within(runningTabPanel).getByRole('button', {
+      name: observationShutdownConstants.buttonText
+    })
+    userEvent.click(shutdownButton)
+
+    const modalDocument = await screen.findByRole('document')
+    const modalShutdownButton = within(modalDocument).getByRole('button', {
+      name: observationShutdownConstants.modalOkText
+    })
+
+    userEvent.click(modalShutdownButton)
+
+    const configurableTab = await screen.findByRole('tab', {
+      name: 'Configurable'
+    })
+    userEvent.click(configurableTab)
+    await screen.findByText(observationShutdownConstants.getSuccessMessage(new ObsMode('DarkNight_1')))
+
+    const configurableTabPanel = await screen.findByRole('tabpanel')
+    await within(configurableTabPanel).findByText('NA')
+    verify(sequencerServiceMock.getSequencerState()).once
+  })
 
   it('should log error if useObsModesDetails() Fails | ESW-450', async () => {
     const smService = mockServices.mock.smService
@@ -189,4 +231,31 @@ describe('Observation page', () => {
       verify(smService.getObsModesDetails()).called()
     })
   })
+
+  const setSequencerServiceMockForLoadedState = () => {
+    const eswSequencerPrefix = new Prefix('ESW', 'DarkNight_1')
+    const eswSequencerConnection = AkkaConnection(eswSequencerPrefix, 'Sequencer')
+    const eswSequencerLocation: AkkaLocation = {
+      _type: 'AkkaLocation',
+      connection: eswSequencerConnection,
+      uri: 'http://localhost:5000/',
+      metadata: {}
+    }
+    when(mockServices.mock.locationService.track(anything())).thenReturn((cb) => {
+      cb({ _type: 'LocationUpdated', location: eswSequencerLocation })
+      return {
+        cancel: () => undefined
+      }
+    })
+    when(sequencerServiceMock.subscribeSequencerState()).thenReturn((onEvent) => {
+      onEvent({
+        _type: 'SequencerStateResponse',
+        sequencerState: { _type: 'Loaded' },
+        stepList: new StepList([])
+      })
+      return {
+        cancel: () => undefined
+      }
+    })
+  }
 })

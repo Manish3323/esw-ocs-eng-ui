@@ -1,83 +1,46 @@
-import {
-  OkOrUnhandledResponse,
-  Prefix,
-  Sequence,
-  SequenceCommand,
-  SequencerService
-} from '@tmtsoftware/esw-ts'
-import { Button, Upload } from 'antd'
+import type { OkOrUnhandledResponse, Sequence, SequencerService } from '@tmtsoftware/esw-ts'
+import { Button } from 'antd'
 import React, { useState } from 'react'
 import { useMutation, UseMutationResult } from '../../../../hooks/useMutation'
 import { errorMessage, successMessage } from '../../../../utils/message'
-import { GET_SEQUENCE, SEQUENCER_STATE } from '../../../queryKeys'
 import { useSequencerService } from '../../hooks/useSequencerService'
+import { loadSequenceConstants } from '../../sequencerConstants'
 import type { SequencerProps } from '../Props'
+import { UploadSequence } from '../UploadSequence'
 
 const useLoadAction = (
-  prefix: Prefix,
-  sequence?: SequenceCommand[]
-): UseMutationResult<
-  OkOrUnhandledResponse | undefined,
-  unknown,
-  SequencerService
-> => {
+  sequence?: Sequence
+): UseMutationResult<OkOrUnhandledResponse | undefined, unknown, SequencerService> => {
   const mutationFn = async (sequencerService: SequencerService) =>
     sequence && (await sequencerService.loadSequence(sequence))
 
   return useMutation({
     mutationFn,
     onSuccess: (res) => {
-      if (res?._type === 'Ok')
-        return successMessage('Sequence has been loaded successfully')
-      return errorMessage('error', Error(res?.msg))
+      if (res?._type === 'Ok') return successMessage(loadSequenceConstants.successMessage)
+      return errorMessage(loadSequenceConstants.failureMessage, Error(res?.msg))
     },
-    onError: (e) => errorMessage('errorMsg', e),
-    invalidateKeysOnSuccess: [
-      [SEQUENCER_STATE.key, prefix.toJSON()],
-      [GET_SEQUENCE.key, prefix.toJSON()]
-    ],
-    useErrorBoundary: false
+    onError: (e) => errorMessage(loadSequenceConstants.failureMessage, e)
   })
 }
+type LoadSequenceProps = Omit<SequencerProps, 'isSequencerRunning'>
 
-export const LoadSequence = ({
-  prefix,
-  sequencerState
-}: SequencerProps): JSX.Element => {
+export const LoadSequence = ({ prefix, sequencerState }: LoadSequenceProps): JSX.Element => {
   const sequencerService = useSequencerService(prefix)
-  const [sequence, setSequence] = useState<SequenceCommand[]>()
-  const loadSequenceAction = useLoadAction(prefix, sequence)
+  const [sequence, setSequence] = useState<Sequence>()
+  const loadSequenceAction = useLoadAction(sequence)
 
-  const beforeUpload = (file: File): Promise<void> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader()
-      reader.readAsText(file)
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          setSequence(Sequence.fromString(reader.result).commands)
-          resolve()
-        }
-      }
-    })
-  }
-
-  const request = () => {
-    sequencerService && loadSequenceAction.mutate(sequencerService)
-  }
+  const request = () => sequencerService && loadSequenceAction.mutate(sequencerService)
 
   return (
-    <Upload
-      beforeUpload={beforeUpload}
-      customRequest={request}
-      showUploadList={false}>
+    <UploadSequence setSequence={setSequence} request={request} uploadErrorMsg={loadSequenceConstants.failureMessage}>
       <Button
         type='primary'
-        disabled={
-          !sequencerState ||
-          !(sequencerState === 'Idle' || sequencerState === 'Loaded')
-        }>
-        Load Sequence
+        loading={loadSequenceAction.isLoading}
+        role={'LoadSequence'}
+        disabled={!sequencerState || !(sequencerState === 'Idle' || sequencerState === 'Loaded')}>
+        {loadSequenceConstants.buttonText}
       </Button>
-    </Upload>
+    </UploadSequence>
   )
 }

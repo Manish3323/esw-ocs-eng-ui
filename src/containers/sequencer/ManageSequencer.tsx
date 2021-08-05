@@ -13,8 +13,7 @@ export const ManageSequencer = (): JSX.Element => {
   const query = new URLSearchParams(search)
   const maybePrefix = query.get(prefixKey)
 
-  if (!maybePrefix)
-    return <SequencerError title={invalidTitle} subtitle={notFound} />
+  if (!maybePrefix) return <SequencerError title={invalidTitle} subtitle={notFound} />
 
   try {
     return <SequencerDetails prefix={Prefix.fromString(maybePrefix)} />

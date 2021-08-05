@@ -6,7 +6,7 @@ SCRIPTPATH="$(
 )"
 COURSIER="$(command -v cs)" || COURSIER="$SCRIPTPATH/scripts/coursier"
 
-RTM_VERSION="33b2359b23"
+RTM_VERSION="0.1.0"
 
 TEST_STORY_FILE="./RTM/testStoryMapping.txt"
 

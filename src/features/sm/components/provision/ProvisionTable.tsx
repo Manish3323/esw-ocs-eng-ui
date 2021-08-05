@@ -16,7 +16,7 @@ type ProvisionDataType = {
 }
 
 const columns = (
-  func: (numOfSeqComp: number, record: ProvisionDataType) => void
+  changeProvisionRecord: (numOfSeqComp: number, record: ProvisionDataType) => void
 ): ColumnsType<ProvisionDataType> => [
   {
     title: <HeaderTitle title='Agent' />,
@@ -31,15 +31,14 @@ const columns = (
     key: 'numOfSequenceComps',
     fixed: 'left',
     sorter: (f, s) => f.numOfSequenceComps - s.numOfSequenceComps,
-    defaultSortOrder: 'descend',
     // eslint-disable-next-line react/display-name
     render: (value: number, record) => (
       <InputNumber
         min={0}
         max={5}
-        defaultValue={value}
+        value={value}
         onChange={(value: string | number | null | undefined) =>
-          func(value ? Number(value) : 0, record)
+          changeProvisionRecord(value ? Number(value) : 0, record)
         }
       />
     )
@@ -55,19 +54,13 @@ const createColumnData = (provisionRecord: Record<string, number>) =>
     }
   })
 
-export const ProvisionTable = ({
-  provisionRecord,
-  setProvisionRecord
-}: ProvisionProps): JSX.Element => {
+export const ProvisionTable = ({ provisionRecord, setProvisionRecord }: ProvisionProps): JSX.Element => {
   const data = createColumnData(provisionRecord)
-
   return (
     <Table
       pagination={false}
       columns={columns((numOfSeqComp, record) => {
-        provisionRecord[record.agentPrefix] = numOfSeqComp
-        record.numOfSequenceComps = numOfSeqComp
-        setProvisionRecord(provisionRecord)
+        setProvisionRecord({ ...provisionRecord, [`${record.agentPrefix}`]: numOfSeqComp })
       })}
       dataSource={data}
       onHeaderRow={() => ({ className: styles.header })}

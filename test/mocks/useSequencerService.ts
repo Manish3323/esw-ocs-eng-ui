@@ -1,8 +1,21 @@
-import type { SequencerService } from '@tmtsoftware/esw-ts'
-import { sequencerServiceInstance } from '../utils/test-utils'
+import type { Prefix, SequencerService } from '@tmtsoftware/esw-ts'
+import {
+  sequencerServiceInstance,
+  sequencerServiceInstanceIris,
+  sequencerServiceInstanceTcs
+} from '../utils/test-utils'
 
-export const useSequencerService = (): SequencerService =>
-  sequencerServiceInstance
+export const useSequencerService = (prefix: Prefix): SequencerService => {
+  switch (prefix.subsystem) {
+    case 'IRIS':
+      return sequencerServiceInstanceIris
 
-export const mkSequencerService = (): SequencerService =>
-  sequencerServiceInstance
+    case 'TCS':
+      return sequencerServiceInstanceTcs
+
+    default:
+      return sequencerServiceInstance
+  }
+}
+
+export const mkSequencerService = (): SequencerService => sequencerServiceInstance

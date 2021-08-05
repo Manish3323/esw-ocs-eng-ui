@@ -17,10 +17,7 @@ export const deleteFile = (outputPath: fs.PathLike): void => {
   })
 }
 
-export const writeArrayToFile = (
-  results: TestSuiteResult,
-  OUTPUT_PATH: string
-): Promise<void> => {
+export const writeArrayToFile = (results: TestSuiteResult, OUTPUT_PATH: string): Promise<void> => {
   return new Promise((resolve) => {
     const stream = fs.createWriteStream(OUTPUT_PATH, {
       flags: 'a+'
@@ -39,18 +36,13 @@ const getArgumentValue = (data: string[], outputRegex: RegExp) => {
   return data.filter((x) => x.match(outputRegex)).map((x) => x.split('=')[1])[0]
 }
 
-export const parseOutput = (
-  args: string[],
-  outputRegex = new RegExp('output|OUTPUT')
-): string => {
+export const parseOutput = (args: string[], outputRegex = new RegExp('output|OUTPUT')): string => {
   return getArgumentValue(args, outputRegex)
 }
 
 const buildResultText = (storyId: string, name: string, status: boolean) => {
   const ts = status ? 'PASSED' : 'FAILED'
-  return `${
-    storyId.trim() + PIPE_WITH_SPACES + name.trim() + PIPE_WITH_SPACES + ts
-  }`
+  return `${storyId.trim() + PIPE_WITH_SPACES + name.trim() + PIPE_WITH_SPACES + ts}`
 }
 
 const sanitizeTestSuite = (suite: TestSuiteResult): string[] => {
@@ -63,9 +55,7 @@ const sanitizeTestSuite = (suite: TestSuiteResult): string[] => {
         storyIds
           .trim()
           .split(COMMA)
-          .forEach((storyId: string) =>
-            listOfStrings.push(buildResultText(storyId, name, test.passed))
-          )
+          .forEach((storyId: string) => listOfStrings.push(buildResultText(storyId, name, test.passed)))
       } else {
         listOfStrings.push(buildResultText('None', name, test.passed))
       }

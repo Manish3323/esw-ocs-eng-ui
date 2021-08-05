@@ -1,12 +1,8 @@
-import type {
-  ConfigureResponse,
-  ConfigureSuccess,
-  ObsMode,
-  SequenceManagerService
-} from '@tmtsoftware/esw-ts'
+import type { ConfigureResponse, ConfigureSuccess, ObsMode, SequenceManagerService } from '@tmtsoftware/esw-ts'
 import { useMutation, UseMutationResult } from '../../../hooks/useMutation'
 import { errorMessage, successMessage } from '../../../utils/message'
 import { AGENTS_STATUS, OBS_MODES_DETAILS } from '../../queryKeys'
+import { configureConstants } from '../smConstants'
 
 const handleConfigureResponse = (res: ConfigureResponse, obsMode: ObsMode) => {
   switch (res._type) {
@@ -23,39 +19,31 @@ const handleConfigureResponse = (res: ConfigureResponse, obsMode: ObsMode) => {
         )}`
       )
     case 'FailedToStartSequencers':
-      throw Error(`Failed to start Sequencers. Reason: ${res.reasons}`)
+      throw Error(`Failed to start Sequencers as ${res.reasons}`)
     case 'SequenceComponentNotAvailable':
       throw Error(res.msg)
     case 'LocationServiceError':
       throw Error(res.reason)
     case 'Unhandled':
       throw Error(res.msg)
+    case 'FailedResponse':
+      throw new Error(res.reason)
   }
 }
 
-const configureObsMode = (
-  sequenceManagerService: SequenceManagerService,
-  obsMode: ObsMode
-) =>
-  sequenceManagerService
-    .configure(obsMode)
-    .then((res) => handleConfigureResponse(res, obsMode))
+const configureObsMode = (sequenceManagerService: SequenceManagerService, obsMode: ObsMode) =>
+  sequenceManagerService.configure(obsMode).then((res) => handleConfigureResponse(res, obsMode))
 
 export const useConfigureAction = (
   obsMode: ObsMode | undefined
-): UseMutationResult<
-  ConfigureSuccess | undefined,
-  unknown,
-  SequenceManagerService
-> => {
+): UseMutationResult<ConfigureSuccess | undefined, unknown, SequenceManagerService> => {
   const configure = async (sequenceManagerService: SequenceManagerService) =>
     obsMode && (await configureObsMode(sequenceManagerService, obsMode))
 
   return useMutation({
     mutationFn: configure,
-    onSuccess: () => successMessage(`${obsMode?.name} has been configured.`),
-    onError: (e) => errorMessage(`Failed to configure ${obsMode?.name}`, e),
-    invalidateKeysOnSuccess: [AGENTS_STATUS.key, OBS_MODES_DETAILS.key],
-    useErrorBoundary: false
+    onSuccess: () => successMessage(configureConstants.getSuccessMessage(obsMode?.name)),
+    onError: (e) => errorMessage(configureConstants.getFailureMessage(obsMode?.name), e),
+    invalidateKeysOnSuccess: [AGENTS_STATUS.key, OBS_MODES_DETAILS.key]
   })
 }

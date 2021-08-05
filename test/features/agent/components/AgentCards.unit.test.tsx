@@ -1,47 +1,31 @@
-import { cleanup, screen } from '@testing-library/react'
+import { cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AgentStatus, ComponentId, Prefix } from '@tmtsoftware/esw-ts'
 import { expect } from 'chai'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { deepEqual, verify, when } from 'ts-mockito'
+import {
+  disabledSequencerActions,
+  killSequenceComponentConstants,
+  spawnSequenceComponentConstants
+} from '../../../../src/features/agent/agentConstants'
 import { AgentCards } from '../../../../src/features/agent/components/AgentCards'
-import { mockServices, renderWithAuth } from '../../../utils/test-utils'
+import { reloadScriptConstants, stopSequencerConstants } from '../../../../src/features/sm/smConstants'
+import {
+  getAgentStatusMock,
+  mockServices,
+  renderWithAuth,
+  sequencerServiceMock,
+  sequencerServiceMockIris
+} from '../../../utils/test-utils'
 
 const emptyAgentStatus: AgentStatus = {
   agentId: new ComponentId(Prefix.fromString('ESW.machine2'), 'Machine'),
   seqCompsStatus: []
 }
-const agentStatus: AgentStatus = {
-  agentId: new ComponentId(Prefix.fromString('ESW.machine1'), 'Machine'),
-  seqCompsStatus: [
-    {
-      seqCompId: new ComponentId(
-        Prefix.fromString('ESW.ESW1'),
-        'SequenceComponent'
-      ),
-      sequencerLocation: [
-        {
-          _type: 'AkkaLocation',
-          connection: {
-            componentType: 'Sequencer',
-            connectionType: 'akka',
-            prefix: Prefix.fromString('ESW.darkNight')
-          },
-          metadata: {},
-          uri: ''
-        }
-      ]
-    },
-    {
-      seqCompId: new ComponentId(
-        Prefix.fromString('ESW.ESW2'),
-        'SequenceComponent'
-      ),
-      sequencerLocation: []
-    }
-  ]
-}
+const agentStatus: AgentStatus = getAgentStatusMock()
+
 describe('Agents Grid View', () => {
   const agentService = mockServices.mock.agentService
   afterEach(() => {
@@ -67,13 +51,10 @@ describe('Agents Grid View', () => {
     expect(screen.getByText('ESW.ESW1')).exist
     expect(screen.getByText('ESW.ESW2')).exist
     expect(screen.getByText('[ESW.darkNight]')).exist
-    expect(screen.getAllByRole('deleteSeqCompIcon')).length(2)
+    expect(screen.getAllByRole('sequenceCompActions')).length(1)
+    expect(screen.getAllByRole('sequencerActions')).length(1)
     expect(screen.getByRole('addSeqCompIcon')).exist
 
-    // ESW.esw1 is with sequencer hence unload icon will appear
-    expect(screen.getByRole('unloadScriptIcon')).exist
-    // ESW.esw2 is without sequencer hence load icon will appear
-    expect(screen.getByRole('loadScriptIcon')).exist
     verify(agentService.getAgentStatus()).called()
   })
 
@@ -94,7 +75,8 @@ describe('Agents Grid View', () => {
     await screen.findByText('ESW.machine1')
     expect(screen.getByText('ESW.machine1')).exist
     expect(screen.getByText('ESW.machine2')).exist
-    expect(screen.getAllByRole('deleteSeqCompIcon')).length(2)
+    expect(screen.getAllByRole('sequenceCompActions')).length(1)
+    expect(screen.getAllByRole('sequencerActions')).length(1)
     expect(screen.getAllByRole('addSeqCompIcon')).length(2)
     verify(agentService.getAgentStatus()).called()
   })
@@ -105,10 +87,7 @@ describe('Agents Grid View', () => {
       agentStatus: [agentStatus],
       seqCompsWithoutAgent: [
         {
-          seqCompId: new ComponentId(
-            Prefix.fromString('IRIS.comp1'),
-            'SequenceComponent'
-          ),
+          seqCompId: new ComponentId(Prefix.fromString('IRIS.comp1'), 'SequenceComponent'),
           sequencerLocation: [
             {
               _type: 'AkkaLocation',
@@ -123,10 +102,7 @@ describe('Agents Grid View', () => {
           ]
         },
         {
-          seqCompId: new ComponentId(
-            Prefix.fromString('TCS.comp1'),
-            'SequenceComponent'
-          ),
+          seqCompId: new ComponentId(Prefix.fromString('TCS.comp1'), 'SequenceComponent'),
           sequencerLocation: []
         }
       ]
@@ -189,10 +165,7 @@ describe('Agents Grid View', () => {
 
   it('should add sequence components on agent| ESW-446', async () => {
     when(
-      agentService.spawnSequenceComponent(
-        deepEqual(Prefix.fromString('ESW.machine1')),
-        deepEqual('ESW_1')
-      )
+      agentService.spawnSequenceComponent(deepEqual(Prefix.fromString('ESW.machine1')), deepEqual('ESW_1'))
     ).thenResolve({ _type: 'Spawned' })
 
     when(agentService.getAgentStatus()).thenResolve({
@@ -211,25 +184,24 @@ describe('Agents Grid View', () => {
     const icon = await screen.findByRole('addSeqCompIcon')
 
     userEvent.click(icon)
-    const inputBox = await screen.findByText('Component name:')
+    const inputBox = await screen.findByText('Add a sequence component')
     expect(inputBox).to.exist
-    userEvent.type(screen.getByRole('textbox'), 'ESW_1')
-    userEvent.click(screen.getByRole('button', { name: 'OK' }))
+    const textBox = screen.getByRole('textbox')
 
-    await screen.findByText(
-      'Successfully spawned Sequence Component: ESW.ESW_1'
-    )
+    await waitFor(() => userEvent.click(textBox))
+    userEvent.type(textBox, 'ESW_1')
+    userEvent.click(screen.getByRole('button', { name: spawnSequenceComponentConstants.modalOkText }))
+
+    await screen.findByText(spawnSequenceComponentConstants.getSuccessMessage('ESW.ESW_1'))
 
     verify(agentService.getAgentStatus()).called()
   })
 
-  it('should kill sequence components on agent| ESW-446', async () => {
-    const seqCompPrefix = new Prefix('ESW', 'ESW1')
-    when(
-      agentService.killComponent(
-        deepEqual(new ComponentId(seqCompPrefix, 'SequenceComponent'))
-      )
-    ).thenResolve({ _type: 'Killed' })
+  it('should kill sequence components on agent| ESW-446,  ESW-502', async () => {
+    const seqCompPrefix = new Prefix('ESW', 'ESW2')
+    when(agentService.killComponent(deepEqual(new ComponentId(seqCompPrefix, 'SequenceComponent')))).thenResolve({
+      _type: 'Killed'
+    })
 
     when(agentService.getAgentStatus()).thenResolve({
       _type: 'Success',
@@ -244,12 +216,76 @@ describe('Agents Grid View', () => {
         </BrowserRouter>
       )
     })
-    const [deleteIcon] = await screen.findAllByRole('deleteSeqCompIcon')
-    userEvent.click(deleteIcon)
+    // first find the dropdown menu
+    const sequenceCompActions = await screen.findByRole('sequenceCompActions')
+    await waitFor(() => userEvent.click(sequenceCompActions))
 
-    await screen.findByText(/Successfully killed Sequence Component/)
+    const killSequenceComponent = await screen.findByText(killSequenceComponentConstants.menuItemText)
+    await waitFor(() => userEvent.click(killSequenceComponent))
+    await screen.findByText(killSequenceComponentConstants.getModalTitle(seqCompPrefix.toJSON()))
+
+    const document = screen.getByRole('document')
+    const confirm = within(document).getByRole('button', { name: killSequenceComponentConstants.modalOkText })
+
+    userEvent.click(confirm)
+
+    await screen.findByText(killSequenceComponentConstants.getSuccessMessage('ESW.ESW2'))
 
     verify(agentService.getAgentStatus()).called()
+  })
+
+  it('should display menu items applicable to sequence components| ESW-502', async () => {
+    when(agentService.getAgentStatus()).thenResolve({
+      _type: 'Success',
+      agentStatus: [agentStatus],
+      seqCompsWithoutAgent: []
+    })
+
+    renderWithAuth({
+      ui: (
+        <BrowserRouter>
+          <AgentCards />
+        </BrowserRouter>
+      )
+    })
+    // first find the dropdown menu
+    const sequenceCompActions = await screen.findByRole('sequenceCompActions')
+    await waitFor(() => userEvent.click(sequenceCompActions))
+
+    // checking different menu items for sequencers and sequence components
+    await waitFor(() => expect(screen.queryByText(killSequenceComponentConstants.menuItemText)).to.exist)
+    await waitFor(() => expect(screen.queryByText(disabledSequencerActions.displayMessage)).to.exist)
+    await waitFor(() => expect(screen.queryByText(reloadScriptConstants.menuItemText)).to.null)
+  })
+
+  it('should display menu items applicable to sequencer | ESW-502, ESW-506', async () => {
+    const agentStatus = getAgentStatusMock('IRIS')
+    when(agentService.getAgentStatus()).thenResolve({
+      _type: 'Success',
+      agentStatus: [agentStatus],
+      seqCompsWithoutAgent: []
+    })
+    when(sequencerServiceMock.getSequencerState()).thenResolve({
+      _type: 'Running'
+    })
+    renderWithAuth({
+      ui: (
+        <BrowserRouter>
+          <AgentCards />
+        </BrowserRouter>
+      )
+    })
+    // first find the dropdown menu
+    const sequenceCompActions = await screen.findByRole('sequencerActions')
+    await waitFor(() => userEvent.click(sequenceCompActions))
+
+    // checking different menu items for sequencers and sequence components
+    await screen.findByText(killSequenceComponentConstants.menuItemText)
+    await screen.findByText(reloadScriptConstants.menuItemText)
+    await screen.findByText(stopSequencerConstants.menuItemText)
+    await waitFor(() => expect(screen.queryByText(disabledSequencerActions.displayMessage)).to.null)
+    verify(sequencerServiceMock.getSequencerState()).called()
+    verify(sequencerServiceMockIris.getSequencerState()).never()
   })
 
   it('should change the location on click of sequencer | ESW-492', async () => {

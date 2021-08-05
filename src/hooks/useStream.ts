@@ -11,10 +11,7 @@ export type UseStreamProps<I, O> = {
 }
 
 // caller should make sure mapper and run functions are wrapped in callback or memo to avoid unnecessary renders
-export const useStream = <I, O>({
-  mapper,
-  run
-}: UseStreamProps<I, O>): [O | undefined, boolean] => {
+export const useStream = <I, O>({ mapper, run }: UseStreamProps<I, O>): [O | undefined, boolean] => {
   const [value, setValue] = useState<O | undefined>(undefined)
   const [loading, setLoading] = useState(true)
 
@@ -27,7 +24,7 @@ export const useStream = <I, O>({
     const sub = run(mappedCallback)
     setLoading(false)
     return sub.cancel
-  }, [loading, mapper, run])
+  }, [mapper, run])
 
   return [value, loading]
 }

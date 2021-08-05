@@ -3,22 +3,24 @@ import userEvent from '@testing-library/user-event'
 import { Prefix, Setup, Step, StepStatus } from '@tmtsoftware/esw-ts'
 import { expect } from 'chai'
 import React from 'react'
-import { StepActions } from '../../../../../src/features/sequencer/components/sequencerDetails/StepActions'
+import { StepActions } from '../../../../../src/features/sequencer/components/steplist/StepActions'
 import { StepListContextProvider } from '../../../../../src/features/sequencer/hooks/useStepListContext'
-import { renderWithAuth } from '../../../../utils/test-utils'
+import {
+  addStepConstants,
+  deleteStepConstants,
+  duplicateStepConstants,
+  insertBreakPointConstants,
+  removeBreakPointConstants
+} from '../../../../../src/features/sequencer/sequencerConstants'
+import { renderWithAuth, sequencerServiceInstance } from '../../../../utils/test-utils'
 
 describe('StepActions', () => {
-  const sequencerPrefix = Prefix.fromString('ESW.iris_darknight')
-
   const stepStatusPending: StepStatus = { _type: 'Pending' }
   const stepStatusInProgress: StepStatus = { _type: 'InFlight' }
   const stepStatusSuccess: StepStatus = { _type: 'Success' }
   const stepStatusFailure: StepStatus = { _type: 'Failure', message: 'error' }
 
-  const getStepWithBreakpoint = (
-    hasBreakpoint: boolean,
-    status: StepStatus
-  ): Step => ({
+  const getStepWithBreakpoint = (hasBreakpoint: boolean, status: StepStatus): Step => ({
     hasBreakpoint: hasBreakpoint,
     status,
     command: new Setup(Prefix.fromString('ESW.test'), 'Command-1'),
@@ -27,133 +29,102 @@ describe('StepActions', () => {
 
   it('should give insert breakpoint option in menu if step does not have breakpoint | ESW-459', async () => {
     renderWithAuth({
-      ui: (
-        <StepActions
-          sequencerPrefix={sequencerPrefix}
-          step={getStepWithBreakpoint(false, stepStatusPending)}
-        />
-      )
+      ui: <StepActions step={getStepWithBreakpoint(false, stepStatusPending)} />
     })
     userEvent.click(await screen.findByRole('stepActions'))
 
-    await screen.findByText('Insert breakpoint')
+    await screen.findByText(insertBreakPointConstants.menuItemText)
   })
 
   it('should give remove breakpoint option in menu if step has a breakpoint | ESW-459', async () => {
     renderWithAuth({
-      ui: (
-        <StepActions
-          sequencerPrefix={sequencerPrefix}
-          step={getStepWithBreakpoint(true, stepStatusPending)}
-        />
-      )
+      ui: <StepActions step={getStepWithBreakpoint(true, stepStatusPending)} />
     })
     userEvent.click(await screen.findByRole('stepActions'))
-    await screen.findByText('Remove breakpoint')
+    await screen.findByText(removeBreakPointConstants.menuItemText)
   })
 
   it('should disable insertBreakpoint and delete when status is in Progress | ESW-459, ESW-490', async () => {
     renderWithAuth({
-      ui: (
-        <StepActions
-          sequencerPrefix={sequencerPrefix}
-          step={getStepWithBreakpoint(false, stepStatusInProgress)}
-        />
-      )
+      ui: <StepActions step={getStepWithBreakpoint(false, stepStatusInProgress)} />
     })
     userEvent.click(await screen.findByRole('stepActions'))
     const insertMenu = (await screen.findByRole('menuitem', {
-      name: /insert breakpoint/i
+      name: new RegExp(insertBreakPointConstants.menuItemText)
     })) as HTMLMenuElement
 
     const deleteMenu = (await screen.findByRole('menuitem', {
-      name: /delete/i
+      name: new RegExp(deleteStepConstants.menuItemText)
     })) as HTMLMenuElement
 
-    expect(insertMenu.classList.contains('ant-menu-item-disabled')).to.be.true
-    expect(deleteMenu.classList.contains('ant-menu-item-disabled')).to.be.true
+    expect(insertMenu.classList.contains('ant-dropdown-menu-item-disabled')).to.be.true
+    expect(deleteMenu.classList.contains('ant-dropdown-menu-item-disabled')).to.be.true
   })
 
   it('should disable delete, insert breakpoint and add a step when status is failure | ESW-459, ESW-490', async () => {
     renderWithAuth({
-      ui: (
-        <StepActions
-          sequencerPrefix={sequencerPrefix}
-          step={getStepWithBreakpoint(false, stepStatusFailure)}
-        />
-      )
+      ui: <StepActions step={getStepWithBreakpoint(false, stepStatusFailure)} />
     })
     userEvent.click(await screen.findByRole('stepActions'))
     const insertMenu = (await screen.findByRole('menuitem', {
-      name: /insert breakpoint/i
+      name: new RegExp(insertBreakPointConstants.menuItemText)
     })) as HTMLMenuElement
 
     const deleteMenu = (await screen.findByRole('menuitem', {
-      name: /delete/i
+      name: new RegExp(deleteStepConstants.menuItemText)
     })) as HTMLMenuElement
 
     const addAStepMenu = (await screen.findByRole('menuitem', {
-      name: /add a step/i
+      name: new RegExp(addStepConstants.menuItemText)
     })) as HTMLMenuElement
 
-    expect(insertMenu.classList.contains('ant-menu-item-disabled')).to.be.true
-    expect(deleteMenu.classList.contains('ant-menu-item-disabled')).to.be.true
-    expect(addAStepMenu.classList.contains('ant-menu-item-disabled')).to.be.true
+    expect(insertMenu.classList.contains('ant-dropdown-menu-item-disabled')).to.be.true
+    expect(deleteMenu.classList.contains('ant-dropdown-menu-item-disabled')).to.be.true
+    expect(addAStepMenu.classList.contains('ant-dropdown-menu-item-disabled')).to.be.true
   })
 
   it('should disable delete, insert breakpoint and add a step when status is success | ESW-459 ESW-490', async () => {
     renderWithAuth({
-      ui: (
-        <StepActions
-          sequencerPrefix={sequencerPrefix}
-          step={getStepWithBreakpoint(false, stepStatusSuccess)}
-        />
-      )
+      ui: <StepActions step={getStepWithBreakpoint(false, stepStatusSuccess)} />
     })
     userEvent.click(await screen.findByRole('stepActions'))
     const insertMenu = (await screen.findByRole('menuitem', {
-      name: /insert breakpoint/i
+      name: new RegExp(insertBreakPointConstants.menuItemText)
     })) as HTMLMenuElement
 
     const deleteMenu = (await screen.findByRole('menuitem', {
-      name: /delete/i
+      name: new RegExp(deleteStepConstants.menuItemText)
     })) as HTMLMenuElement
 
     const addAStepMenu = (await screen.findByRole('menuitem', {
-      name: /add a step/i
+      name: new RegExp(addStepConstants.menuItemText)
     })) as HTMLMenuElement
 
-    expect(insertMenu.classList.contains('ant-menu-item-disabled')).to.be.true
-    expect(deleteMenu.classList.contains('ant-menu-item-disabled')).to.be.true
-    expect(addAStepMenu.classList.contains('ant-menu-item-disabled')).to.be.true
+    expect(insertMenu.classList.contains('ant-dropdown-menu-item-disabled')).to.be.true
+    expect(deleteMenu.classList.contains('ant-dropdown-menu-item-disabled')).to.be.true
+    expect(addAStepMenu.classList.contains('ant-dropdown-menu-item-disabled')).to.be.true
   })
 
   it('should enable every menu item when status is pending | ESW-459, ESW-490', async () => {
     renderWithAuth({
-      ui: (
-        <StepActions
-          sequencerPrefix={sequencerPrefix}
-          step={getStepWithBreakpoint(false, stepStatusPending)}
-        />
-      )
+      ui: <StepActions step={getStepWithBreakpoint(false, stepStatusPending)} />
     })
     userEvent.click(await screen.findByRole('stepActions'))
     const insertMenu = (await screen.findByRole('menuitem', {
-      name: /insert breakpoint/i
+      name: new RegExp(insertBreakPointConstants.menuItemText)
     })) as HTMLMenuElement
 
     const deleteMenu = (await screen.findByRole('menuitem', {
-      name: /delete/i
+      name: new RegExp(deleteStepConstants.menuItemText)
     })) as HTMLMenuElement
 
     const addAStepMenu = (await screen.findByRole('menuitem', {
-      name: /add a step/i
+      name: new RegExp(addStepConstants.menuItemText)
     })) as HTMLMenuElement
 
-    expect(insertMenu.classList.contains('ant-menu-item-disabled')).to.be.false
-    expect(deleteMenu.classList.contains('ant-menu-item-disabled')).to.be.false
-    expect(addAStepMenu.classList.contains('ant-menu-item-disabled')).to.be
-      .false
+    expect(insertMenu.classList.contains('ant-dropdown-menu-item-disabled')).to.be.false
+    expect(deleteMenu.classList.contains('ant-dropdown-menu-item-disabled')).to.be.false
+    expect(addAStepMenu.classList.contains('ant-dropdown-menu-item-disabled')).to.be.false
   })
 
   it('should disable duplicate if stepListStatus is completed | ESW-462', async () => {
@@ -162,13 +133,12 @@ describe('StepActions', () => {
         <StepListContextProvider
           value={{
             handleDuplicate: () => undefined,
+            setFollowProgress: () => undefined,
             isDuplicateEnabled: false,
-            stepListStatus: 'All Steps Completed'
+            stepListStatus: 'All Steps Completed',
+            sequencerService: sequencerServiceInstance
           }}>
-          <StepActions
-            sequencerPrefix={sequencerPrefix}
-            step={getStepWithBreakpoint(false, stepStatusInProgress)}
-          />
+          <StepActions step={getStepWithBreakpoint(false, stepStatusInProgress)} />
         </StepListContextProvider>
       )
     })
@@ -176,10 +146,36 @@ describe('StepActions', () => {
     userEvent.click(await screen.findByRole('stepActions'))
 
     const duplicateMenu = (await screen.findByRole('menuitem', {
-      name: /duplicate/i
+      name: new RegExp(duplicateStepConstants.menuItemText)
     })) as HTMLMenuElement
 
-    expect(duplicateMenu.classList.contains('ant-menu-item-disabled')).to.be
-      .true
+    expect(duplicateMenu.classList.contains('ant-dropdown-menu-item-disabled')).to.be.true
+  })
+
+  it('should disable add steps if step Status is completed | ESW-461', async () => {
+    renderWithAuth({
+      ui: (
+        <StepListContextProvider
+          value={{
+            handleDuplicate: () => undefined,
+            setFollowProgress: () => undefined,
+            isDuplicateEnabled: false,
+            stepListStatus: 'All Steps Completed',
+            sequencerService: sequencerServiceInstance
+          }}>
+          <StepActions step={getStepWithBreakpoint(false, stepStatusSuccess)} />
+        </StepListContextProvider>
+      )
+    })
+
+    userEvent.click(await screen.findByRole('stepActions'))
+
+    const addStepsMenu = (await screen.findByRole('menuitem', {
+      name: new RegExp(addStepConstants.menuItemText)
+    })) as HTMLMenuElement
+    const addStepsDiv = (await screen.findByRole('addSteps')) as HTMLDivElement
+
+    expect(addStepsMenu.classList.contains('ant-dropdown-menu-item-disabled')).to.be.true
+    expect(addStepsDiv.style.color).to.be.equal('var(--disabledColor)')
   })
 })

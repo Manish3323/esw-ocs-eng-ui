@@ -1,12 +1,13 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { HttpLocation } from '@tmtsoftware/esw-ts'
 import { HttpConnection, Prefix } from '@tmtsoftware/esw-ts'
+import type { HttpLocation } from '@tmtsoftware/esw-ts'
 import { expect } from 'chai'
 import React from 'react'
 import { anything, capture, when } from 'ts-mockito'
 import { SpawnSMButton } from '../../../../src/features/sm/components/SpawnButton'
 import { OBS_MODE_CONFIG } from '../../../../src/features/sm/constants'
+import { spawnSMConstants } from '../../../../src/features/sm/smConstants'
 import { mockServices, renderWithAuth } from '../../../utils/test-utils'
 
 describe('SpawnSMButton', () => {
@@ -26,13 +27,9 @@ describe('SpawnSMButton', () => {
       metadata: {}
     }
 
-    when(locServiceMock.listByComponentType('Machine')).thenResolve([
-      agentLocation
-    ])
+    when(locServiceMock.listByComponentType('Machine')).thenResolve([agentLocation])
 
-    when(
-      agentServiceMock.spawnSequenceManager(anything(), OBS_MODE_CONFIG, false)
-    ).thenResolve({ _type: 'Spawned' })
+    when(agentServiceMock.spawnSequenceManager(anything(), OBS_MODE_CONFIG, false)).thenResolve({ _type: 'Spawned' })
 
     renderWithAuth({
       ui: <SpawnSMButton />
@@ -43,11 +40,11 @@ describe('SpawnSMButton', () => {
     userEvent.click(spawnButton)
 
     //modal will appear with spawn button
-    await screen.findByText('Choose an agent to spawn the Sequence Manager')
+    await screen.findByText(spawnSMConstants.modalTitle)
 
     const modalDocument = screen.getByRole('document')
     const modalSpawnButton = within(modalDocument).getByRole('button', {
-      name: 'Spawn'
+      name: spawnSMConstants.modalOkText
     })
 
     //User selects agent machine
@@ -60,11 +57,9 @@ describe('SpawnSMButton', () => {
     //User clicks modal's spawn button
     userEvent.click(modalSpawnButton)
 
-    await screen.findByText('Successfully spawned Sequence Manager')
+    await screen.findByText(spawnSMConstants.successMessage)
 
-    const [prefix, expectedConfig, isLocal] = capture(
-      agentServiceMock.spawnSequenceManager
-    ).first()
+    const [prefix, expectedConfig, isLocal] = capture(agentServiceMock.spawnSequenceManager).first()
 
     expect(prefix.toJSON()).eq(agentPrefix.toJSON())
     expect(expectedConfig).eq(OBS_MODE_CONFIG)
@@ -82,16 +77,9 @@ describe('SpawnSMButton', () => {
     const spawnButton = await screen.findByRole('button', { name: 'Spawn' })
     userEvent.click(spawnButton)
 
-    await screen.findByText(
-      'Agents are not running. Please start an agent first.'
-    )
+    await screen.findByText(spawnSMConstants.agentNotRunningMessage)
 
-    await waitFor(
-      () =>
-        expect(
-          screen.queryByText('Choose an agent to spawn the Sequence Manager')
-        ).not.exist
-    )
+    await waitFor(() => expect(screen.queryByText(spawnSMConstants.modalTitle)).not.exist)
   })
 
   it('should show notification if spawning sequence manager fails | ESW-441', async () => {
@@ -105,13 +93,12 @@ describe('SpawnSMButton', () => {
       metadata: {}
     }
 
-    when(locServiceMock.listByComponentType('Machine')).thenResolve([
-      agentLocation
-    ])
+    when(locServiceMock.listByComponentType('Machine')).thenResolve([agentLocation])
 
-    when(
-      agentServiceMock.spawnSequenceManager(anything(), OBS_MODE_CONFIG, false)
-    ).thenResolve({ _type: 'Failed', msg: 'Config file not found' })
+    when(agentServiceMock.spawnSequenceManager(anything(), OBS_MODE_CONFIG, false)).thenResolve({
+      _type: 'Failed',
+      msg: 'Config file not found'
+    })
 
     renderWithAuth({
       ui: <SpawnSMButton />
@@ -122,11 +109,11 @@ describe('SpawnSMButton', () => {
     userEvent.click(spawnButton)
 
     //modal will appear with spawn button
-    await screen.findByText('Choose an agent to spawn the Sequence Manager')
+    await screen.findByText(spawnSMConstants.modalTitle)
 
     const modalDocument = screen.getByRole('document')
     const modalSpawnButton = within(modalDocument).getByRole('button', {
-      name: 'Spawn'
+      name: spawnSMConstants.modalOkText
     })
 
     //User selects agent machine
@@ -139,8 +126,6 @@ describe('SpawnSMButton', () => {
     //User clicks modal's spawn button
     userEvent.click(modalSpawnButton)
 
-    await screen.findByText(
-      'Sequence Manager could not be spawned. Please try again., reason: Config file not found'
-    )
+    await screen.findByText(`${spawnSMConstants.failureMessage}, reason: Config file not found`)
   })
 })

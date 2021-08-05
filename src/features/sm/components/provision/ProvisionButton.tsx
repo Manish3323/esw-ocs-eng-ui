@@ -14,16 +14,15 @@ import { useMutation } from '../../../../hooks/useMutation'
 import { errorMessage } from '../../../../utils/message'
 import { PROVISION_CONF_PATH } from '../../constants'
 import { useProvisionAction } from '../../hooks/useProvisionAction'
+import { provisionConfConstants, provisionConstants } from '../../smConstants'
 import { ProvisionTable } from './ProvisionTable'
 
 type ProvisionRecord = Record<string, number>
 
 const sanitiseErrorMsg = (res: SpawningSequenceComponentsFailed) =>
-  res.failureResponses.map((x) => x.split('reason')[0].split(':')[1]).join('\n')
+  res.failureResponses.map((x) => x.split('reason')[0]).join('\n')
 
-const provision = (provisionRecord: ProvisionRecord) => async (
-  sequenceManagerService: SequenceManagerService
-) => {
+const provision = (provisionRecord: ProvisionRecord) => async (sequenceManagerService: SequenceManagerService) => {
   const provisionConfig = parseProvisionConf(provisionRecord)
   const res = await sequenceManagerService.provision(provisionConfig)
   switch (res._type) {
@@ -34,57 +33,40 @@ const provision = (provisionRecord: ProvisionRecord) => async (
     case 'Unhandled':
       throw Error(res.msg)
     case 'SpawningSequenceComponentsFailed':
-      throw Error(
-        `Unable to spawn following sequence comps on machines: ${sanitiseErrorMsg(
-          res
-        )}`
-      )
+      throw Error(`${sanitiseErrorMsg(res)}`)
     case 'CouldNotFindMachines':
-      throw Error(
-        `Could not find following machine: ${res.prefix
-          .map((x) => x.toJSON())
-          .join(',')}`
-      )
+      throw Error(`Could not find following machine: ${res.prefix.map((x) => x.toJSON()).join(',')}`)
+
+    case 'FailedResponse':
+      throw new Error(res.reason)
   }
 }
 
 const parseProvisionConf = (provisionRecord: ProvisionRecord) => {
-  const agentProvisionConfigs = Object.entries(provisionRecord).map(
-    ([prefixStr, num]) => {
-      return new AgentProvisionConfig(Prefix.fromString(prefixStr), num)
-    }
-  )
+  const agentProvisionConfigs = Object.entries(provisionRecord).map(([prefixStr, num]) => {
+    return new AgentProvisionConfig(Prefix.fromString(prefixStr), num)
+  })
   return new ProvisionConfig(agentProvisionConfigs)
 }
 
-const validateProvisionConf = (
-  provisionRecord: ProvisionRecord
-): ProvisionRecord => {
+const validateProvisionConf = (provisionRecord: ProvisionRecord): ProvisionRecord => {
   Object.entries(provisionRecord).forEach(([key, value]) => {
     if (!Number.isInteger(value)) {
-      throw Error(
-        `value of number of sequence components for ${key} is not an Integer`
-      )
+      throw Error(provisionConfConstants.getInValidConfMessage(key))
     }
     Prefix.fromString(key)
   })
   return provisionRecord
 }
 
-const fetchProvisionConf = async (
-  configService: ConfigService
-): Promise<ProvisionRecord> => {
+const fetchProvisionConf = async (configService: ConfigService): Promise<ProvisionRecord> => {
   const confOption = await configService.getActive(PROVISION_CONF_PATH)
-  if (!confOption) throw Error('Provision conf is not present')
+  if (!confOption) throw Error(provisionConfConstants.confNotPresentMessage)
   const provisionConfRecord = await confOption.fileContentAsString()
   return validateProvisionConf(JSON.parse(provisionConfRecord))
 }
 
-export const ProvisionButton = ({
-  disabled = false
-}: {
-  disabled?: boolean
-}): JSX.Element => {
+export const ProvisionButton = ({ disabled = false }: { disabled?: boolean }): JSX.Element => {
   const useErrorBoundary = false
   const [modalVisibility, setModalVisibility] = useState(false)
   const [provisionRecord, setProvisionRecord] = useState<ProvisionRecord>({})
@@ -99,20 +81,20 @@ export const ProvisionButton = ({
     mutationFn: fetchProvisionConf,
     onSuccess: async (data) => {
       if (Object.values(data).length <= 0) {
-        await errorMessage('Provision config is empty')
+        await errorMessage(provisionConfConstants.confEmptyMessage)
       } else {
         setProvisionRecord(data)
         setModalVisibility(true)
       }
     },
-    onError: (e) => errorMessage('Failed to fetch provision config', e),
+    onError: (e) => errorMessage(provisionConfConstants.fetchFailureMessage, e),
     useErrorBoundary
   })
 
   const provisionAction = useProvisionAction(
     provision(provisionRecord),
-    'Successfully provisioned',
-    'Failed to provision',
+    provisionConstants.successMessage,
+    provisionConstants.failureMessage,
     useErrorBoundary
   )
 
@@ -133,7 +115,7 @@ export const ProvisionButton = ({
         disabled={disabled}
         loading={smContextLoading || isLoading || provisionAction.isLoading}
         onClick={onProvisionClick}>
-        Provision
+        {provisionConstants.buttonText}
       </Button>
       <Modal
         title={
@@ -141,17 +123,15 @@ export const ProvisionButton = ({
             {'Provision Configuration:'}
           </Typography.Title>
         }
-        okText='Provision'
+        okText={provisionConstants.modalOkText}
         centered
         visible={modalVisibility}
         confirmLoading={provisionAction.isLoading}
         bodyStyle={{ padding: 0 }}
         onOk={handleModalOk}
-        onCancel={handleModalCancel}>
-        <ProvisionTable
-          provisionRecord={provisionRecord}
-          setProvisionRecord={setProvisionRecord}
-        />
+        onCancel={handleModalCancel}
+        destroyOnClose>
+        <ProvisionTable provisionRecord={provisionRecord} setProvisionRecord={setProvisionRecord} />
       </Modal>
     </>
   )

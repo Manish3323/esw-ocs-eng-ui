@@ -1,8 +1,4 @@
-import {
-  ObsMode,
-  ObsModesDetailsResponseSuccess,
-  ObsModeDetails
-} from '@tmtsoftware/esw-ts'
+import { ObsMode, ObsModesDetailsResponseSuccess, ObsModeDetails } from '@tmtsoftware/esw-ts'
 const obsModes: ObsModeDetails[] = [
   {
     obsMode: new ObsMode('DarkNight_1'),
@@ -23,7 +19,8 @@ const obsModes: ObsModeDetails[] = [
   {
     obsMode: new ObsMode('DarkNight_3'),
     status: {
-      _type: 'NonConfigurable'
+      _type: 'NonConfigurable',
+      missingSequenceComponents: []
     },
     resources: ['ESW', 'IRIS', 'WFOS'],
     sequencers: ['ESW', 'TCS']
@@ -33,8 +30,8 @@ const obsModes: ObsModeDetails[] = [
     status: {
       _type: 'Configured'
     },
-    resources: ['ESW', 'TCS'],
-    sequencers: ['ESW', 'TCS']
+    resources: ['ESW', 'SOSS'],
+    sequencers: ['ESW', 'SOSS']
   },
   {
     obsMode: new ObsMode('DarkNight_6'),
@@ -47,7 +44,8 @@ const obsModes: ObsModeDetails[] = [
   {
     obsMode: new ObsMode('DarkNight_5'),
     status: {
-      _type: 'NonConfigurable'
+      _type: 'NonConfigurable',
+      missingSequenceComponents: ['TCS']
     },
     resources: ['ESW', 'IRIS', 'WFOS'],
     sequencers: ['ESW', 'TCS']

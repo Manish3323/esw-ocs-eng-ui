@@ -6,13 +6,7 @@ type IconProps = {
 export const Telescope = ({ className, fill }: IconProps): JSX.Element => {
   const fillCOlor = fill ? fill : 'currentColor'
   return (
-    <svg
-      version='1.1'
-      width='20'
-      height='20'
-      viewBox='0 0 64 64'
-      className={className}
-      fill={fillCOlor}>
+    <svg version='1.1' width='20' height='20' viewBox='0 0 64 64' className={className} fill={fillCOlor}>
       <path d='M8,20.4h2.2v2.2h2.4v-2.2h2.2V18h-2.2v-2.2h-2.4V18H8V20.4z' />
       <path d='M25.6,2v2.2h-2.2v2.4h2.2v2.2H28V6.6h2.2V4.2H28V2H25.6z' />
       <path d='M50,38v2.2h-2.2v2.4H50v2.2h2.4v-2.2h2.2v-2.4h-2.2V38H50z' />

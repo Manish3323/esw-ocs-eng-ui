@@ -5,12 +5,7 @@ import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { anything, when } from 'ts-mockito'
 import { App } from '../../src/containers/app/App'
-import {
-  HOME,
-  INFRASTRUCTURE,
-  OBSERVATIONS,
-  RESOURCES
-} from '../../src/routes/RoutesConfig'
+import { HOME, INFRASTRUCTURE, OBSERVATIONS, RESOURCES } from '../../src/routes/RoutesConfig'
 import { mockServices, renderWithAuth } from '../utils/test-utils'
 
 const renderWithRouter = (ui: React.ReactElement) => {

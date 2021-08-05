@@ -5,6 +5,7 @@ import React from 'react'
 import { when } from 'ts-mockito'
 import { SMServiceProvider } from '../../../../src/contexts/SMContext'
 import { SMCard } from '../../../../src/features/sm/components/smcard/SMCard'
+import { shutdownSMConstants } from '../../../../src/features/sm/smConstants'
 import { mockServices, renderWithAuth } from '../../../utils/test-utils'
 
 describe('SMCard', () => {
@@ -12,6 +13,7 @@ describe('SMCard', () => {
   when(locServiceMock.track(SEQUENCE_MANAGER_CONNECTION)).thenReturn(() => ({
     cancel: () => ({})
   }))
+  when(locServiceMock.listByComponentType('Machine')).thenResolve([])
 
   it('should show Spawn button if Sequence Manager is not spawned | ESW-441', async () => {
     renderWithAuth({
@@ -22,9 +24,7 @@ describe('SMCard', () => {
       )
     })
 
-    await waitFor(
-      () => expect(screen.queryByRole('button', { name: 'Shutdown' })).to.null
-    )
+    await waitFor(() => expect(screen.queryByRole('button', { name: shutdownSMConstants.modalOkText })).to.null)
 
     await screen.findByRole('button', { name: 'Spawn' })
   })
@@ -39,20 +39,14 @@ describe('SMCard', () => {
 
     renderWithAuth({
       ui: (
-        <SMServiceProvider
-          initialValue={[
-            { smService: mockServices.instance.smService, smLocation },
-            false
-          ]}>
+        <SMServiceProvider initialValue={[{ smService: mockServices.instance.smService, smLocation }, false]}>
           <SMCard />
         </SMServiceProvider>
       )
     })
 
-    await waitFor(
-      () => expect(screen.queryByRole('button', { name: 'Spawn' })).to.null
-    )
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Spawn' })).to.null)
 
-    await screen.findByRole('button', { name: 'Shutdown' })
+    await screen.findByRole('button', { name: shutdownSMConstants.modalOkText })
   })
 })

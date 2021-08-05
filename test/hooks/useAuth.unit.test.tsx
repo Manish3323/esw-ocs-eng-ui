@@ -3,6 +3,7 @@ import { AuthContext } from '@tmtsoftware/esw-ts'
 import { expect } from 'chai'
 import React from 'react'
 import { useAuth } from '../../src/hooks/useAuth'
+import { getUsername } from '../../src/utils/getUsername'
 import { getMockAuth } from '../utils/test-utils'
 
 describe('Auth hook', () => {
@@ -37,9 +38,7 @@ describe('Auth hook', () => {
     })
 
     expect(result.current.auth).exist
-    expect(result.current.auth?.tokenParsed()?.preferred_username).to.equal(
-      'esw-user'
-    )
+    expect(getUsername(result.current.auth)).to.equal('esw-user')
   })
 
   it('Auth should return undefined when logged out', async () => {
@@ -64,6 +63,6 @@ describe('Auth hook', () => {
     })
 
     expect(result.current.auth).exist
-    expect(result.current.auth?.tokenParsed()?.preferred_username).to.undefined
+    expect(getUsername(result.current.auth)).to.undefined
   })
 })

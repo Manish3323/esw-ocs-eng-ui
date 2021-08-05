@@ -9,27 +9,18 @@ import { Resources } from '../containers/resources/Resources'
 import { ManageSequencer } from '../containers/sequencer/ManageSequencer'
 import { useAuth } from '../hooks/useAuth'
 import { NoMatch } from './NoMatch'
-import {
-  HOME,
-  INFRASTRUCTURE,
-  NO_MATCH,
-  OBSERVATIONS,
-  RESOURCES,
-  SEQUENCER_PATH
-} from './RoutesConfig'
+import { HOME, INFRASTRUCTURE, NO_MATCH, OBSERVATIONS, RESOURCES, SEQUENCER_PATH } from './RoutesConfig'
 
-const RedirectToLogin = ({ login }: { login: () => void }) => {
-  useEffect(() => {
-    login()
-  }, [login])
+const RedirectToLogin = () => {
+  const { login } = useAuth()
+
+  useEffect(login, [login])
 
   return <Result icon={<LoadingOutlined />} />
 }
 
-export const Routes = (): JSX.Element => {
-  const { login, auth } = useAuth()
-
-  return !!auth && auth.isAuthenticated() ? (
+export const Routes = ({ loggedIn }: { loggedIn: boolean }): JSX.Element => {
+  return loggedIn ? (
     <Switch>
       <Route exact path={HOME} component={Home} />
       <Route path={INFRASTRUCTURE} component={Infrastructure} />
@@ -39,6 +30,6 @@ export const Routes = (): JSX.Element => {
       <Route path={NO_MATCH} component={NoMatch} />
     </Switch>
   ) : (
-    <RedirectToLogin login={login} />
+    <RedirectToLogin />
   )
 }

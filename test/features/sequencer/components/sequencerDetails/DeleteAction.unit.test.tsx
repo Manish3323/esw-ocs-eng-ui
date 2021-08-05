@@ -3,29 +3,25 @@ import userEvent from '@testing-library/user-event'
 import { GenericResponse, Prefix, Setup, Step } from '@tmtsoftware/esw-ts'
 import React from 'react'
 import { verify, when } from 'ts-mockito'
-import { DeleteAction } from '../../../../../src/features/sequencer/components/sequencerDetails/DeleteAction'
-import {
-  renderWithAuth,
-  sequencerServiceMock
-} from '../../../../utils/test-utils'
+import { DeleteAction } from '../../../../../src/features/sequencer/components/steplist/DeleteAction'
+import { deleteStepConstants, stepConstants } from '../../../../../src/features/sequencer/sequencerConstants'
+import { MenuWithStepListContext, renderWithAuth, sequencerServiceMock } from '../../../../utils/test-utils'
 
 describe('Delete action', () => {
-  const sequencerPrefix = Prefix.fromString('ESW.iris_darknight')
-
   const deleteActionTests: [string, GenericResponse, string][] = [
     [
       'success',
       {
         _type: 'Ok'
       },
-      'Successfully deleted step'
+      deleteStepConstants.successMessage
     ],
     [
       'CannotOperateOnAnInFlightOrFinishedStep',
       {
         _type: 'CannotOperateOnAnInFlightOrFinishedStep'
       },
-      'Failed to delete step, reason: Cannot operate on in progress or finished step'
+      `${deleteStepConstants.failureMessage}, reason: ${stepConstants.cannotOperateOnAnInFlightOrFinishedStepMsg}`
     ],
     [
       'Unhandled',
@@ -35,7 +31,7 @@ describe('Delete action', () => {
         state: 'Idle',
         messageType: 'Unhandled'
       },
-      'Failed to delete step, reason: Cannot delete step in idle state'
+      `${deleteStepConstants.failureMessage}, reason: Cannot delete step in idle state`
     ],
     [
       'IdDoesNotExist',
@@ -43,7 +39,7 @@ describe('Delete action', () => {
         _type: 'IdDoesNotExist',
         id: 'step1'
       },
-      'Failed to delete step, reason: step1 does not exist'
+      `${deleteStepConstants.failureMessage}, reason: ${stepConstants.idDoesNotExistMsg('step1')}`
     ]
   ]
 
@@ -57,22 +53,15 @@ describe('Delete action', () => {
       }
 
       when(sequencerServiceMock.delete(step.id)).thenResolve(res)
-
       renderWithAuth({
-        ui: (
-          <DeleteAction
-            sequencerPrefix={sequencerPrefix}
-            step={step}
-            isDisabled={false}
-          />
-        )
+        ui: <MenuWithStepListContext menuItem={<DeleteAction step={step} isDisabled={false} />} />
       })
 
-      const deleteButton = await screen.findByText('Delete')
+      const deleteButton = await screen.findByText(deleteStepConstants.menuItemText)
       userEvent.click(deleteButton, { button: 0 })
 
-      await screen.findByText(/do you want to delete a step 'Command-1'\?/i)
-      const deleteStep = screen.getByRole('button', { name: /delete/i })
+      await screen.findByText(deleteStepConstants.getModalTitle('Command-1'))
+      const deleteStep = screen.getByRole('button', { name: deleteStepConstants.modalOkText })
 
       userEvent.click(deleteStep)
 

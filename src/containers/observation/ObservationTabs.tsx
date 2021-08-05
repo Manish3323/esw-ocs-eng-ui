@@ -10,38 +10,23 @@ export type TabName = typeof tabNames[number]
 
 export const ObservationTabs = (): JSX.Element => {
   const [selectedTab, setSelectedTab] = useState<TabName>('Running')
-  const [selectedObservation, setSelectedObservation] = useState<string>('')
 
   return (
     <Tabs
       activeKey={selectedTab}
-      onTabClick={(key: string) => {
-        setSelectedTab(key as TabName)
-        selectedTab !== key && setSelectedObservation('')
-      }}
+      onTabClick={(key: string) => setSelectedTab(key as TabName)}
       className={styles.tabs}
-      size={'large'}
+      size='large'
       tabBarStyle={{
         backgroundColor: 'white',
         paddingLeft: '1.5rem',
         marginBottom: '1.5rem'
       }}>
-      {tabNames.map((tabName) => {
-        return (
-          <TabPane
-            key={tabName}
-            tab={tabName}
-            style={{ marginLeft: '1.5rem', width: '99%' }}>
-            {selectedTab === tabName && (
-              <ObservationTab
-                tabName={tabName}
-                selected={selectedObservation}
-                setObservation={setSelectedObservation}
-              />
-            )}
-          </TabPane>
-        )
-      })}
+      {tabNames.map((tabName) => (
+        <TabPane key={tabName} tab={tabName} style={{ marginLeft: '1.5rem', width: '99%' }}>
+          {selectedTab === tabName && <ObservationTab tabName={tabName} />}
+        </TabPane>
+      ))}
     </Tabs>
   )
 }
